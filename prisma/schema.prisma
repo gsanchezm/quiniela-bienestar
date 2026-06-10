@@ -1,0 +1,120 @@
+// Quiniela del Bienestar — esquema de base de datos
+// Mundial 2026: 104 partidos (72 de grupos + 32 de eliminatoria)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Stage {
+  J1
+  J2
+  J3
+  R32
+  R16
+  QF
+  SF
+  FIN
+}
+
+enum PickOutcome {
+  H
+  D
+  A
+}
+
+enum PenWinner {
+  H
+  A
+}
+
+enum TokenType {
+  CONFIRM
+  RESET
+  EMAIL_CHANGE
+}
+
+model Team {
+  code        String  @id // 'MEX'
+  name        String // 'México'
+  flag        String // código flagcdn: 'mx', 'gb-eng'
+  group       String // 'A'..'L'
+  homeMatches Match[] @relation("homeTeam")
+  awayMatches Match[] @relation("awayTeam")
+}
+
+model Match {
+  id         Int        @id // número oficial 1..104
+  stage      Stage
+  group      String? // solo fase de grupos
+  tag        String? // 'Llave 1', 'LA FINAL — Nueva York/NJ' (solo eliminatoria)
+  isKnockout Boolean    @default(false)
+  homeCode   String?
+  awayCode   String?
+  home       Team?      @relation("homeTeam", fields: [homeCode], references: [code])
+  away       Team?      @relation("awayTeam", fields: [awayCode], references: [code])
+  kickoffUtc DateTime
+  homeGoals  Int? // marcador oficial (con prórroga en KO)
+  awayGoals  Int?
+  penWinner  PenWinner? // solo KO empatado: ganador en penales
+  picks      Pick[]
+
+  @@index([stage])
+}
+
+model User {
+  id           String       @id @default(cuid())
+  nombre       String
+  apellido     String
+  email        String       @unique // siempre en minúsculas
+  passwordHash String
+  photo        String? // data URL JPEG 128×128 (~15 KB)
+  color        String // color de avatar sin foto
+  confirmed    Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  picks        Pick[]
+  sessions     Session[]
+  tokens       EmailToken[]
+}
+
+// Pick 1X2 y/o pronóstico de marcador exacto. Al menos uno de los dos
+// debe estar presente (se valida en la capa de aplicación).
+model Pick {
+  id        String       @id @default(cuid())
+  userId    String
+  matchId   Int
+  outcome   PickOutcome? // H/D/A en grupos; H/A en eliminatoria
+  predHome  Int? // pronóstico de marcador 0–99
+  predAway  Int?
+  updatedAt DateTime     @updatedAt
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match     Match        @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, matchId])
+}
+
+model Session {
+  token     String   @id // 256 bits aleatorios en hex
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model EmailToken {
+  token     String    @id // 256 bits aleatorios en hex
+  type      TokenType
+  userId    String
+  newEmail  String? // solo EMAIL_CHANGE: el correo nuevo a confirmar
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

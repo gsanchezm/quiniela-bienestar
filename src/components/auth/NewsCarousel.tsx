@@ -10,6 +10,7 @@ interface Slide {
   kicker: string;
   head: ReactNode;
   cta: string;
+  image: string;
 }
 
 const SLIDES: Slide[] = [
@@ -22,6 +23,7 @@ const SLIDES: Slide[] = [
       </span>
     ),
     cta: 'LLENA TU QUINIELA',
+    image: '/auth-carousel/apertura.svg',
   },
   {
     id: 'formato',
@@ -32,6 +34,7 @@ const SLIDES: Slide[] = [
       </span>
     ),
     cta: 'CREAR CUENTA',
+    image: '/auth-carousel/formato.svg',
   },
   {
     id: 'cierre',
@@ -42,6 +45,7 @@ const SLIDES: Slide[] = [
       </span>
     ),
     cta: 'CREAR CUENTA',
+    image: '/auth-carousel/cierre.svg',
   },
   {
     id: 'puntos',
@@ -53,6 +57,7 @@ const SLIDES: Slide[] = [
       </span>
     ),
     cta: 'CREAR CUENTA',
+    image: '/auth-carousel/puntos.svg',
   },
 ];
 
@@ -70,7 +75,10 @@ export function NewsCarousel() {
     <div className="carousel" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       {SLIDES.map((s, i) => (
         <div key={s.id} className={'car-slide' + (i === idx ? ' car-on' : '')} aria-hidden={i !== idx}>
-          <div className="car-photo" />
+          <div className="car-photo">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={s.image} alt="" />
+          </div>
           <div className="car-fade" />
           <div className="car-copy">
             <span className="car-kicker">{s.kicker}</span>

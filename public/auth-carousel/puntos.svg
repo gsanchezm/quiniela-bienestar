@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" role="img" aria-label="Tabla de posiciones y puntos">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#141414"/>
+      <stop offset="1" stop-color="#061008"/>
+    </linearGradient>
+    <linearGradient id="row" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#272622"/>
+      <stop offset="1" stop-color="#121211"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="620" fill="url(#bg)"/>
+  <g transform="translate(122 98)">
+    <rect width="526" height="424" rx="18" fill="#0d0d0c" stroke="#f4f4ef" stroke-opacity=".16"/>
+    <rect x="28" y="30" width="470" height="56" rx="12" fill="#4db53c" opacity=".9"/>
+    <rect x="28" y="112" width="470" height="58" rx="10" fill="url(#row)" stroke="#4db53c" stroke-opacity=".4"/>
+    <rect x="28" y="194" width="470" height="58" rx="10" fill="url(#row)" stroke="#e9c700" stroke-opacity=".4"/>
+    <rect x="28" y="276" width="470" height="58" rx="10" fill="url(#row)" stroke="#f4f4ef" stroke-opacity=".18"/>
+    <rect x="28" y="358" width="470" height="34" rx="10" fill="url(#row)" opacity=".68"/>
+    <g fill="#f4f4ef">
+      <circle cx="70" cy="141" r="18"/><circle cx="70" cy="223" r="18"/><circle cx="70" cy="305" r="18"/>
+      <rect x="114" y="131" width="190" height="14" rx="7" opacity=".88"/>
+      <rect x="114" y="213" width="168" height="14" rx="7" opacity=".72"/>
+      <rect x="114" y="295" width="144" height="14" rx="7" opacity=".56"/>
+    </g>
+    <g fill="#4db53c">
+      <rect x="384" y="128" width="72" height="28" rx="8"/>
+      <rect x="384" y="210" width="72" height="28" rx="8"/>
+      <rect x="384" y="292" width="72" height="28" rx="8"/>
+    </g>
+  </g>
+  <g transform="translate(618 168)">
+    <path d="M96 0l27 56 62 9-45 44 11 62-55-29-55 29 11-62L7 65l62-9z" fill="#e9c700"/>
+    <circle cx="96" cy="262" r="112" fill="#4db53c" opacity=".22"/>
+    <path d="M96 176v172M24 262h144" stroke="#4db53c" stroke-width="18" stroke-linecap="round"/>
+    <circle cx="96" cy="262" r="54" fill="#f4f4ef"/>
+    <path d="M96 218l36 26-14 43H74l-14-43z" fill="#10120f"/>
+  </g>
+  <path d="M0 0h900v620H0z" fill="#000" opacity=".12"/>
+</svg>

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" role="img" aria-label="Mapa y grupos del Mundial 2026">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#111817"/>
+      <stop offset=".55" stop-color="#0d0f0d"/>
+      <stop offset="1" stop-color="#050605"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#2b2b27"/>
+      <stop offset="1" stop-color="#151514"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="620" fill="url(#bg)"/>
+  <path d="M116 212c86-102 188-128 304-76 96 43 176 8 264 8 50 0 88 18 116 53" fill="none" stroke="#4db53c" stroke-opacity=".34" stroke-width="18" stroke-linecap="round"/>
+  <path d="M112 392c100-72 205-88 315-48 130 48 239 22 340-44" fill="none" stroke="#e9c700" stroke-opacity=".34" stroke-width="14" stroke-linecap="round"/>
+  <g opacity=".95">
+    <rect x="132" y="154" width="138" height="92" rx="10" fill="url(#card)" stroke="#4db53c" stroke-opacity=".55"/>
+    <rect x="132" y="282" width="138" height="92" rx="10" fill="url(#card)" stroke="#4db53c" stroke-opacity=".55"/>
+    <rect x="132" y="410" width="138" height="92" rx="10" fill="url(#card)" stroke="#4db53c" stroke-opacity=".55"/>
+    <rect x="382" y="154" width="138" height="92" rx="10" fill="url(#card)" stroke="#e9c700" stroke-opacity=".5"/>
+    <rect x="382" y="282" width="138" height="92" rx="10" fill="url(#card)" stroke="#e9c700" stroke-opacity=".5"/>
+    <rect x="382" y="410" width="138" height="92" rx="10" fill="url(#card)" stroke="#e9c700" stroke-opacity=".5"/>
+    <rect x="632" y="154" width="138" height="92" rx="10" fill="url(#card)" stroke="#f4f4ef" stroke-opacity=".35"/>
+    <rect x="632" y="282" width="138" height="92" rx="10" fill="url(#card)" stroke="#f4f4ef" stroke-opacity=".35"/>
+    <rect x="632" y="410" width="138" height="92" rx="10" fill="url(#card)" stroke="#f4f4ef" stroke-opacity=".35"/>
+  </g>
+  <g fill="#f4f4ef" opacity=".86">
+    <circle cx="174" cy="196" r="12"/><circle cx="210" cy="196" r="12"/><circle cx="246" cy="196" r="12"/>
+    <circle cx="174" cy="324" r="12"/><circle cx="210" cy="324" r="12"/><circle cx="246" cy="324" r="12"/>
+    <circle cx="174" cy="452" r="12"/><circle cx="210" cy="452" r="12"/><circle cx="246" cy="452" r="12"/>
+    <circle cx="424" cy="196" r="12"/><circle cx="460" cy="196" r="12"/><circle cx="496" cy="196" r="12"/>
+    <circle cx="424" cy="324" r="12"/><circle cx="460" cy="324" r="12"/><circle cx="496" cy="324" r="12"/>
+    <circle cx="424" cy="452" r="12"/><circle cx="460" cy="452" r="12"/><circle cx="496" cy="452" r="12"/>
+    <circle cx="674" cy="196" r="12"/><circle cx="710" cy="196" r="12"/><circle cx="746" cy="196" r="12"/>
+    <circle cx="674" cy="324" r="12"/><circle cx="710" cy="324" r="12"/><circle cx="746" cy="324" r="12"/>
+    <circle cx="674" cy="452" r="12"/><circle cx="710" cy="452" r="12"/><circle cx="746" cy="452" r="12"/>
+  </g>
+  <path d="M0 0h900v620H0z" fill="#000" opacity=".18"/>
+</svg>

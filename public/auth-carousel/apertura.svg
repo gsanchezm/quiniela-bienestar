@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" role="img" aria-label="Estadio listo para el partido inaugural">
+  <defs>
+    <radialGradient id="field" cx="50%" cy="58%" r="62%">
+      <stop offset="0" stop-color="#55bd3f"/>
+      <stop offset="0.45" stop-color="#1f7e34"/>
+      <stop offset="1" stop-color="#07110c"/>
+    </radialGradient>
+    <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#161615"/>
+      <stop offset="1" stop-color="#050605"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="900" height="620" fill="url(#sky)"/>
+  <path d="M74 246c110-150 640-150 752 0" fill="none" stroke="#2f332d" stroke-width="64"/>
+  <path d="M88 246c108-126 612-126 724 0" fill="none" stroke="#8a8e83" stroke-opacity=".24" stroke-width="8"/>
+  <g filter="url(#glow)" opacity=".9">
+    <circle cx="190" cy="190" r="9" fill="#fff3a8"/>
+    <circle cx="285" cy="152" r="8" fill="#fff3a8"/>
+    <circle cx="450" cy="134" r="11" fill="#fff3a8"/>
+    <circle cx="615" cy="152" r="8" fill="#fff3a8"/>
+    <circle cx="710" cy="190" r="9" fill="#fff3a8"/>
+  </g>
+  <ellipse cx="450" cy="520" rx="430" ry="210" fill="url(#field)"/>
+  <path d="M24 520h852" stroke="#d9ffd0" stroke-opacity=".32" stroke-width="3"/>
+  <ellipse cx="450" cy="520" rx="145" ry="72" fill="none" stroke="#d9ffd0" stroke-opacity=".4" stroke-width="4"/>
+  <path d="M450 310v310" stroke="#d9ffd0" stroke-opacity=".34" stroke-width="3"/>
+  <g transform="translate(404 268)">
+    <circle cx="46" cy="46" r="46" fill="#f2f2ee"/>
+    <path d="M46 8l25 18-9 30H30l-9-30z" fill="#10120f"/>
+    <path d="M30 56l-14 27m46-27l14 27M21 26 5 41m66-15 16 15" stroke="#10120f" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <path d="M0 0h900v620H0z" fill="#000" opacity=".18"/>
+</svg>

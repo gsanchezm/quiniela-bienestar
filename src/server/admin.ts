@@ -1,8 +1,14 @@
 import { env } from './env';
 
-// El rol de admin se deriva de ADMIN_EMAILS (sin columna en BD): la lista
-// es chica y así no hay estado que sincronizar.
-export function isAdmin(email: string | null | undefined): boolean {
+// Dos niveles: super-admins (ADMIN_EMAILS, imborrables e indegradables) y
+// admins nombrados desde la UI (columna isAdmin). Mismos poderes operativos.
+
+export function isSuperAdmin(email: string | null | undefined): boolean {
   if (!email) return false;
   return env.adminEmails.includes(email.trim().toLowerCase());
+}
+
+export function isAdmin(user: { email: string; isAdmin?: boolean } | null | undefined): boolean {
+  if (!user) return false;
+  return user.isAdmin === true || isSuperAdmin(user.email);
 }

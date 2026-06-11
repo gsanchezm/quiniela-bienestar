@@ -55,7 +55,9 @@ test('admin CORRIGE el marcador a 0-2 y todo se recalcula: -3 puntos y tarjeta e
   await page.goto('/resultados');
   const row = page.locator('.admrow').filter({ hasText: 'Brasil' }).first();
   await fillAdminGoals(row, '0', '2');
+  const respuesta = page.waitForResponse((r) => r.request().method() === 'POST');
   await row.getByRole('button', { name: 'Actualizar' }).click();
+  await respuesta; // espera el round-trip antes de leer la tabla
   await expect(row.locator('.goal-input').nth(1)).toHaveValue('2');
 
   expect(await erikPoints(page)).toBe(antes - 3);

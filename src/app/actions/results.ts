@@ -23,7 +23,7 @@ class Forbidden extends Error {}
 
 async function requireAdmin() {
   const user = await getSessionUser();
-  if (!user || !isAdmin(user.email)) throw new Forbidden('Solo administradores.');
+  if (!user || !isAdmin(user)) throw new Forbidden('Solo administradores.');
   return user;
 }
 

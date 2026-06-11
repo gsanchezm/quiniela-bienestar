@@ -23,7 +23,7 @@ const SLIDES: Slide[] = [
       </span>
     ),
     cta: 'LLENA TU QUINIELA',
-    image: '/auth-carousel/apertura.svg',
+    image: '/auth-carousel/azteca.jpg',
   },
   {
     id: 'formato',
@@ -34,7 +34,7 @@ const SLIDES: Slide[] = [
       </span>
     ),
     cta: 'CREAR CUENTA',
-    image: '/auth-carousel/formato.svg',
+    image: '/auth-carousel/sedes-mexico-2026.jpg',
   },
   {
     id: 'cierre',
@@ -45,7 +45,7 @@ const SLIDES: Slide[] = [
       </span>
     ),
     cta: 'CREAR CUENTA',
-    image: '/auth-carousel/cierre.svg',
+    image: '/auth-carousel/tarjetas-arbitro.svg',
   },
   {
     id: 'puntos',
@@ -57,7 +57,7 @@ const SLIDES: Slide[] = [
       </span>
     ),
     cta: 'CREAR CUENTA',
-    image: '/auth-carousel/puntos.svg',
+    image: '/auth-carousel/marcador.jpg',
   },
 ];
 

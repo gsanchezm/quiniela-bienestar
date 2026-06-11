@@ -4,6 +4,7 @@ import { db } from '@/server/db';
 import { isLocked } from '@/domain/lock';
 import { matchOutcome, scorePick } from '@/domain/scoring';
 import { computeStandings, type FinishedMatch, type PicksByUser } from '@/domain/standings';
+import { isSuperAdmin } from '@/server/admin';
 import { canSeePick } from '@/server/services/privacy';
 import type { MatchResult, Outcome, PickScore, PickValue } from '@/domain/types';
 
@@ -141,21 +142,40 @@ export async function getStandingsView(): Promise<StandingsRowView[]> {
   }));
 }
 
-export interface PendingUserView {
+export interface PlayerRowView {
   id: string;
   nombre: string;
   apellido: string;
   email: string;
+  photo: string | null;
+  color: string;
+  confirmed: boolean;
+  isAdmin: boolean;
+  isSuper: boolean; // ADMIN_EMAILS: intocable desde la UI
+  totalPicks: number;
 }
 
-// Cuentas registradas que aún no confirman su correo (para que el admin
-// pueda confirmarlas manualmente cuando el correo no les llega).
-export async function getPendingUsers(): Promise<PendingUserView[]> {
-  return db.user.findMany({
-    where: { confirmed: false },
-    select: { id: true, nombre: true, apellido: true, email: true },
-    orderBy: { createdAt: 'desc' },
+// Lista completa de participantes para el tab JUGADORES (pendientes primero).
+export async function getAllPlayers(): Promise<PlayerRowView[]> {
+  const rows = await db.user.findMany({
+    select: {
+      id: true,
+      nombre: true,
+      apellido: true,
+      email: true,
+      photo: true,
+      color: true,
+      confirmed: true,
+      isAdmin: true,
+      _count: { select: { picks: true } },
+    },
+    orderBy: [{ confirmed: 'asc' }, { nombre: 'asc' }],
   });
+  return rows.map(({ _count, ...r }) => ({
+    ...r,
+    isSuper: isSuperAdmin(r.email),
+    totalPicks: _count.picks,
+  }));
 }
 
 export interface PlayerPickRowView {

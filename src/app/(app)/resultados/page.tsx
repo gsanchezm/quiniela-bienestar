@@ -4,30 +4,22 @@ import { db } from '@/server/db';
 import { env } from '@/server/env';
 import { getSessionUser } from '@/server/auth/session';
 import { isAdmin } from '@/server/admin';
-import { getMatchesForUser, getPendingUsers } from '@/server/queries';
+import { getMatchesForUser } from '@/server/queries';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ResultadosPage() {
   const me = await getSessionUser();
   if (!me) redirect('/login');
-  if (!isAdmin(me.email)) notFound(); // la pantalla no existe para no-admins
+  if (!isAdmin(me)) notFound(); // la pantalla no existe para no-admins
 
-  const [matches, teams, pendingUsers] = await Promise.all([
+  const [matches, teams] = await Promise.all([
     getMatchesForUser(me.id),
     db.team.findMany({
       select: { code: true, name: true, flag: true },
       orderBy: { name: 'asc' },
     }),
-    getPendingUsers(),
   ]);
 
-  return (
-    <AdminScreen
-      matches={matches}
-      teams={teams}
-      pendingUsers={pendingUsers}
-      syncAvailable={Boolean(env.footballDataToken)}
-    />
-  );
+  return <AdminScreen matches={matches} teams={teams} syncAvailable={Boolean(env.footballDataToken)} />;
 }

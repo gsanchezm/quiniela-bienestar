@@ -17,7 +17,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   );
   if (!authorized) {
     const user = await getSessionUser();
-    authorized = Boolean(user && isAdmin(user.email));
+    authorized = Boolean(user && isAdmin(user));
   }
   if (!authorized) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 

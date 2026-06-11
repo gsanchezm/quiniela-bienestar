@@ -19,7 +19,7 @@ export default async function LandingPage() {
 
   return (
     <div className="landing">
-      <StadiumBackdrop videoId="smiF90YexLY" />
+      <StadiumBackdrop videoId="smiF90YexLY" loopAtSeconds={60} />
       <div className="landing-top">
         <span className="landing-badge">COPA MUNDIAL 2026 · MÉXICO / EE.UU. / CANADÁ</span>
       </div>

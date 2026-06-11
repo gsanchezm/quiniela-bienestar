@@ -22,7 +22,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             QUINIELA <em>DEL BIENESTAR</em>
           </span>
         </div>
-        <HeaderTabs isAdmin={isAdmin(me.email)} />
+        <HeaderTabs isAdmin={isAdmin(me)} />
         <div className="apphead-user">
           <Link className="apphead-profile" href="/perfil" title="Configuración de perfil">
             <Avatar user={me} size={32} />

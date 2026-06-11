@@ -75,6 +75,7 @@ model User {
   photo        String? // data URL JPEG 128×128 (~15 KB)
   color        String // color de avatar sin foto
   confirmed    Boolean      @default(false)
+  isAdmin      Boolean      @default(false) // nombrado desde la UI; ADMIN_EMAILS son super-admins
   createdAt    DateTime     @default(now())
   picks        Pick[]
   sessions     Session[]

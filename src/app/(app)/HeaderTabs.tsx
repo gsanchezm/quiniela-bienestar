@@ -8,8 +8,13 @@ export function HeaderTabs({ isAdmin }: { isAdmin: boolean }) {
   const tabs = [
     { href: '/partidos', label: 'PARTIDOS' },
     { href: '/tabla', label: 'TABLA' },
-    // El tab Resultados solo existe para admins (spec §4.4).
-    ...(isAdmin ? [{ href: '/resultados', label: 'RESULTADOS' }] : []),
+    // Tabs exclusivos de administradores (spec §4.4).
+    ...(isAdmin
+      ? [
+          { href: '/resultados', label: 'RESULTADOS' },
+          { href: '/jugadores', label: 'JUGADORES' },
+        ]
+      : []),
   ];
   return (
     <nav className="apphead-tabs">

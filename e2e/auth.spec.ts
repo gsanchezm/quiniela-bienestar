@@ -2,6 +2,10 @@ import { test, expect } from '@playwright/test';
 import { blockYoutube, login } from './helpers';
 import { E2E_UNCONFIRMED_EMAIL, E2E_USER_EMAIL, E2E_PASSWORD } from './env';
 
+// IP propia del spec: el rate limit de registro (5/h por IP) cuenta por
+// cliente, igual que en producción detrás del proxy de Render.
+test.use({ extraHTTPHeaders: { 'x-forwarded-for': '10.77.0.11' } });
+
 test.describe('autenticación — happy paths', () => {
   test('login correcto entra a Partidos y muestra al usuario en el header', async ({ page }) => {
     await login(page, E2E_USER_EMAIL);
@@ -17,7 +21,7 @@ test.describe('autenticación — happy paths', () => {
     await page.getByPlaceholder('tu@correo.com').fill(`nueva+${Date.now()}@e2e.mx`);
     await page.getByPlaceholder('Mínimo 6 caracteres').fill('secreto1');
     await page.getByRole('button', { name: 'REGISTRARME' }).click();
-    await expect(page.locator('.authok')).toContainText('Te mandamos un correo');
+    await expect(page.locator('.authok')).toContainText('El organizador de la quiniela la activará');
   });
 
   test('cerrar sesión regresa al landing', async ({ page }) => {

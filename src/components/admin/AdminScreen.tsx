@@ -7,11 +7,10 @@ import {
   saveResultAction,
   syncNowAction,
 } from '@/app/actions/results';
-import { confirmUserAction } from '@/app/actions/users';
 import { Flag } from '@/components/Flag';
 import { StageBar } from '@/components/matches/StageBar';
 import type { StageId } from '@/data/worldcup2026';
-import type { MatchView, PendingUserView, TeamView } from '@/server/queries';
+import type { MatchView, TeamView } from '@/server/queries';
 import type { SyncSummary } from '@/server/services/sync';
 
 const clean = (v: string) => v.replace(/[^0-9]/g, '').slice(0, 2);
@@ -161,38 +160,13 @@ function AdminRow({ m, teams }: { m: MatchView; teams: TeamView[] }) {
   );
 }
 
-function PendingUserRow({ u }: { u: PendingUserView }) {
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-  const confirm = () =>
-    startTransition(async () => {
-      const res = await confirmUserAction(u.id);
-      if (res.error) setError(res.error);
-    });
-  return (
-    <div className="admrow">
-      <span className="admrow-teams">
-        {u.nombre} {u.apellido} <em>{u.email}</em>
-      </span>
-      <span className="admrow-actions">
-        <button className="btn btn-mini" type="button" disabled={pending} onClick={confirm}>
-          {pending ? 'Confirmando…' : '✓ Confirmar cuenta'}
-        </button>
-      </span>
-      {error ? <span className="admrow-error">{error}</span> : null}
-    </div>
-  );
-}
-
 export function AdminScreen({
   matches,
   teams,
-  pendingUsers,
   syncAvailable,
 }: {
   matches: MatchView[];
   teams: TeamView[];
-  pendingUsers: PendingUserView[];
   syncAvailable: boolean;
 }) {
   const [stage, setStage] = useState<StageId>('J1');
@@ -220,21 +194,6 @@ export function AdminScreen({
         de los penales. Al cambiar los equipos de una llave que ya tenía picks, esos picks se borran para
         que la gente vuelva a elegir.
       </div>
-      {pendingUsers.length > 0 ? (
-        <>
-          <div className="stagehead">
-            <h2 className="stagetitle">Jugadores por confirmar</h2>
-          </div>
-          <div className="notice">
-            Si a alguien no le llegó el correo de confirmación, confírmalo aquí y ya podrá iniciar sesión.
-          </div>
-          <div className="admlist" style={{ marginBottom: 18 }}>
-            {pendingUsers.map((u) => (
-              <PendingUserRow key={u.id} u={u} />
-            ))}
-          </div>
-        </>
-      ) : null}
       <div className="syncbar">
         <button className="btn btn-mini" type="button" onClick={syncNow} disabled={pending || !syncAvailable}>
           {pending ? 'Sincronizando…' : '⟳ Sincronizar con football-data.org'}

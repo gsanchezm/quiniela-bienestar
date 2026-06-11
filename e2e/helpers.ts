@@ -12,7 +12,8 @@ export async function login(page: Page, email: string) {
   await page.getByPlaceholder('tu@correo.com').fill(email);
   await page.getByPlaceholder('••••••••').fill(E2E_PASSWORD);
   await page.getByRole('button', { name: 'ENTRAR A LA CANCHA' }).click();
-  await expect(page).toHaveURL(/\/partidos/);
+  // 30 s: la primera compilación de /partidos en dev puede tardar más de 10 s.
+  await expect(page).toHaveURL(/\/partidos/, { timeout: 30_000 });
 }
 
 // Tarjeta de partido que contiene el número LED dado (ej. '01').

@@ -524,8 +524,19 @@ a { color: inherit; }
   color: var(--ink); font-size: 13px; padding: 7px 8px; outline: none; max-width: 170px;
 }
 .adm-select:focus { border-color: var(--accent); }
-.admrow-actions { display: flex; gap: 6px; margin-left: auto; }
+.admrow-actions { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
 .admrow-error { width: 100%; color: var(--danger); font-size: 12px; }
+
+/* badges del panel de jugadores */
+.badge {
+  font-family: var(--head-font); font-size: 10px; letter-spacing: 0.18em;
+  border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px;
+  color: var(--ink-dim); white-space: nowrap;
+}
+.badge-accent { color: var(--accent); border-color: var(--accent); }
+.badge-warn { color: #e8b53a; border-color: #e8b53a55; }
+.resetlink { display: flex; align-items: center; gap: 8px; width: 100%; flex-wrap: wrap; }
+.resetlink .field-input { flex: 1; min-width: 220px; padding: 7px 10px; font-size: 12.5px; }
 
 /* ---------- perfil / configuración ---------- */
 .screen-profile { max-width: 520px; }

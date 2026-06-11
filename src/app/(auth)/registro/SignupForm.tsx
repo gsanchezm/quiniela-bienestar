@@ -11,15 +11,14 @@ export function SignupForm() {
   if (state.ok) {
     return (
       <div className="authok">
-        <div className="authok-icon">✉</div>
+        <div className="authok-icon">✓</div>
         <p>
-          Te mandamos un correo a <strong>{state.email}</strong>.<br />
-          Haz clic en <strong>“Confirmar mi cuenta”</strong> para entrar a la cancha.
+          ¡Listo! Tu cuenta <strong>{state.email}</strong> quedó registrada.
+          <br />
+          El organizador de la quiniela la <strong>activará en breve</strong> — en cuanto lo haga podrás
+          iniciar sesión.
         </p>
-        <p className="authhint">
-          ¿No llega? Revisa tu carpeta de spam — o pídele al organizador de la quiniela que confirme tu
-          cuenta manualmente.
-        </p>
+        <p className="authhint">Tip: avísale por WhatsApp para que te active más rápido ⚽</p>
       </div>
     );
   }

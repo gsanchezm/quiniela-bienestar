@@ -7,12 +7,17 @@ import { useRef, useState } from 'react';
 export function PhotoPicker({ initial }: { initial: string | null }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [photo, setPhoto] = useState<string | null>(initial);
+  const [error, setError] = useState<string | null>(null);
 
   const handle = (file: File | undefined) => {
     if (!file) return;
+    setError(null);
+    const fail = () => setError('No pudimos leer esa imagen. Prueba con un JPG o PNG.');
     const reader = new FileReader();
+    reader.onerror = fail;
     reader.onload = () => {
       const img = new Image();
+      img.onerror = fail;
       img.onload = () => {
         const c = document.createElement('canvas');
         const s = 128;
@@ -50,6 +55,7 @@ export function PhotoPicker({ initial }: { initial: string | null }) {
             Quitar
           </button>
         ) : null}
+        {error ? <span className="field-msg">{error}</span> : null}
       </div>
       <input
         ref={inputRef}

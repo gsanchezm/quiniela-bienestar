@@ -49,13 +49,17 @@ function AdminRow({ m, teams }: { m: MatchView; teams: TeamView[] }) {
   const [home, setHome] = useState(m.home?.code ?? '');
   const [away, setAway] = useState(m.away?.code ?? '');
 
+  // Re-sincroniza SOLO cuando los datos del servidor cambian de verdad
+  // (deps primitivas): un refresh del router no debe borrar lo que el
+  // admin está tecleando.
   useEffect(() => {
     setHg(m.result ? String(m.result.homeGoals) : '');
     setAg(m.result ? String(m.result.awayGoals) : '');
     setWinner(m.result?.penWinner ?? '');
     setHome(m.home?.code ?? '');
     setAway(m.away?.code ?? '');
-  }, [m]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [m.result?.homeGoals, m.result?.awayGoals, m.result?.penWinner, m.home?.code, m.away?.code]);
 
   const run = (fn: () => Promise<{ error?: string }>) => {
     setError(null);
@@ -208,7 +212,7 @@ export function AdminScreen({
       <StageBar stage={stage} onStage={setStage} />
       <div className="admlist">
         {list.map((m) => (
-          <AdminRow key={`${m.id}_${m.result ? 'r' : 'n'}_${m.home?.code ?? ''}_${m.away?.code ?? ''}`} m={m} teams={teams} />
+          <AdminRow key={m.id} m={m} teams={teams} />
         ))}
       </div>
     </div>

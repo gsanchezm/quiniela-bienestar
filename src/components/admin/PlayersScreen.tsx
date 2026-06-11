@@ -131,6 +131,9 @@ export function PlayersScreen({ players, meId }: { players: PlayerRowView[]; meI
       <div className="stagehead">
         <h2 className="stagetitle">Jugadores</h2>
         <div className="stageprogress">
+          <a className="btn btn-mini btn-ghost" href="/api/export">
+            ⬇ Respaldo Excel (CSV)
+          </a>
           <span className="led led-sm">{players.length < 10 ? '0' + players.length : players.length}</span>
           <span className="stageprogress-label">PARTICIPANTES</span>
         </div>

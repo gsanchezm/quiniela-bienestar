@@ -98,6 +98,22 @@ test('nombrar admin a un jugador le da los tabs y quitárselo se los quita', asy
   await expect(page.locator('.apphead-tabs')).not.toContainText('RESULTADOS');
 });
 
+test('el respaldo CSV incluye a todos los jugadores y es solo para admins', async ({ page }) => {
+  await login(page, E2E_USER_EMAIL);
+  expect((await page.request.get('/api/export')).status()).toBe(403);
+  await page.getByRole('button', { name: 'Salir' }).click();
+
+  await login(page, E2E_ADMIN_EMAIL);
+  const res = await page.request.get('/api/export');
+  expect(res.status()).toBe(200);
+  expect(res.headers()['content-type']).toContain('text/csv');
+  expect(res.headers()['content-disposition']).toContain('quiniela-respaldo');
+  const body = await res.text();
+  expect(body).toContain('Jugador,Email,Confirmado');
+  expect(body).toContain(E2E_USER_EMAIL); // jugadores sin picks también aparecen
+  expect(body).toContain(E2E_ADMIN_EMAIL);
+});
+
 test('guardrail: el admin no ve acciones destructivas sobre su propia cuenta', async ({ page }) => {
   await login(page, E2E_ADMIN_EMAIL);
   await page.goto('/jugadores');

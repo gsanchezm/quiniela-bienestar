@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { matchOutcome, scorePick } from './scoring';
+import { impliedOutcome, matchOutcome, scorePick } from './scoring';
 import type { MatchResult, Outcome, PickValue } from './types';
 
 const res = (homeGoals: number, awayGoals: number, penWinner: 'H' | 'A' | null = null): MatchResult => ({
@@ -28,6 +28,19 @@ describe('resultado del partido', () => {
 
   it('en eliminatoria empatado sin penales capturados no hay resultado', () => {
     expect(matchOutcome(res(1, 1), true)).toBeNull();
+  });
+});
+
+describe('resultado implícito de un marcador', () => {
+  it('deriva H/A/D en fase de grupos', () => {
+    expect(impliedOutcome(2, 0, false)).toBe('H');
+    expect(impliedOutcome(0, 2, false)).toBe('A');
+    expect(impliedOutcome(1, 1, false)).toBe('D');
+  });
+
+  it('en eliminatoria un marcador empatado no implica ganador (penales)', () => {
+    expect(impliedOutcome(1, 1, true)).toBeNull();
+    expect(impliedOutcome(3, 1, true)).toBe('H');
   });
 });
 

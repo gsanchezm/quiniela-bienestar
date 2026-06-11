@@ -45,6 +45,21 @@ test.describe('picks y puntos — happy paths', () => {
     await expect(card.getByRole('button', { name: 'EMPATE' })).toHaveClass(/pick-on/);
   });
 
+  test('pick y marcador contradictorios muestran la mini advertencia', async ({ page }) => {
+    await login(page, E2E_USER_EMAIL);
+    const card = matchCard(page, '03'); // pick EMPATE del test anterior
+    await card.getByLabel(/goles de canadá/i).fill('2');
+    await card.getByLabel(/goles de bosnia/i).fill('1');
+    await card.getByLabel(/goles de bosnia/i).blur();
+    await expect(card.locator('.match-pred-warn')).toContainText('resultados distintos');
+    // espera la sincronización del servidor antes de editar de nuevo
+    await expect(card.getByLabel(/goles de canadá/i)).toHaveValue('2');
+    // al alinear el marcador con el pick, la advertencia desaparece
+    await card.getByLabel(/goles de canadá/i).fill('1');
+    await card.getByLabel(/goles de canadá/i).blur();
+    await expect(card.locator('.match-pred-warn')).toHaveCount(0);
+  });
+
   test('admin captura un resultado y la tabla suma 3 puntos (acierto + exacto)', async ({ page }) => {
     await login(page, E2E_ADMIN_EMAIL);
     await page.goto('/resultados');

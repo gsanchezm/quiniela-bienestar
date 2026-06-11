@@ -9,6 +9,7 @@ import {
 import { Flag } from '@/components/Flag';
 import type { MatchView } from '@/server/queries';
 import type { Outcome } from '@/domain/types';
+import { impliedOutcome } from '@/domain/scoring';
 import { fmtTime } from '@/lib/dates';
 
 function PickBtn({
@@ -244,6 +245,20 @@ export function MatchCard({ m }: { m: MatchView }) {
         </>
       )}
 
+      {(() => {
+        // Aviso (no bloqueo): pick y marcador apuntan a resultados distintos.
+        // Es legal — el exacto vale +2 por su cuenta — pero seguro fue un dedazo.
+        if (m.result || locked || !myPick?.outcome || myPick.predHome == null || myPick.predAway == null)
+          return null;
+        const implied = impliedOutcome(myPick.predHome, myPick.predAway, m.isKnockout);
+        if (implied === null || implied === myPick.outcome) return null;
+        return (
+          <div className="match-pred-warn">
+            ⚠️ Tu pick y tu marcador apuntan a resultados distintos: si el marcador pega, ganarías solo
+            los +2 del exacto.
+          </div>
+        );
+      })()}
       {error ? <div className="match-lockline" style={{ color: 'var(--danger)' }}>{error}</div> : null}
       {lockline()}
     </article>

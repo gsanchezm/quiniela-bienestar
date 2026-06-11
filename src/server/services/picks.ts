@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { isLocked } from '@/domain/lock';
+import { impliedOutcome } from '@/domain/scoring';
 import { outcomeSchema, scorePredictionSchema } from '@/domain/validation';
 import type { Outcome, PickValue } from '@/domain/types';
 
@@ -78,13 +79,8 @@ export async function setScorePrediction(
   if (!parsed.success) throw new PickError(parsed.error.issues[0].message);
 
   const cur = (await repo.getPick(userId, matchId)) ?? EMPTY;
-  let outcome = cur.outcome;
-  if (outcome === null) {
-    // Auto-pick implícito; en KO un marcador empatado no decide ganador.
-    if (predHome > predAway) outcome = 'H';
-    else if (predHome < predAway) outcome = 'A';
-    else outcome = m.isKnockout ? null : 'D';
-  }
+  // Auto-pick implícito si aún no eligió; en KO un empate no decide ganador.
+  const outcome = cur.outcome ?? impliedOutcome(predHome, predAway, m.isKnockout);
   await repo.upsertPick(userId, matchId, { outcome, predHome, predAway });
 }
 

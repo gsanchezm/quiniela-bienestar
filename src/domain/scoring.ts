@@ -8,6 +8,14 @@ export function matchOutcome(r: MatchResult, isKnockout: boolean): Outcome | nul
   return isKnockout ? r.penWinner : 'D';
 }
 
+// Resultado 1X2 que implica un pronóstico de marcador. En eliminatoria un
+// empate no implica ganador (lo deciden los penales).
+export function impliedOutcome(predHome: number, predAway: number, isKnockout: boolean): Outcome | null {
+  if (predHome > predAway) return 'H';
+  if (predHome < predAway) return 'A';
+  return isKnockout ? null : 'D';
+}
+
 // Puntos de un pick: 1 por acertar el 1X2, +2 por marcador exacto.
 // El marcador exacto compara contra el marcador del juego (en KO con penales,
 // el de los 120 minutos), independiente del ganador de la tanda.

@@ -395,6 +395,9 @@ a { color: inherit; }
 .match-tag { font-family: var(--head-font); font-size: 11px; letter-spacing: 0.22em; color: var(--ink-faint); }
 .match-n { flex: 1; text-align: center; color: var(--ink-faint); text-shadow: none; }
 .match-when { font-family: var(--head-font); font-size: 11px; letter-spacing: 0.14em; color: var(--ink-dim); }
+.match-when-urgent { color: #e8b53a; font-weight: 600; }
+.notice-urgent { border-color: #e8b53a; }
+.notice-urgent strong { color: #e8b53a; }
 .match-final .match-when { color: var(--accent); }
 .match-teams { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; margin-bottom: 11px; }
 .match-team { display: flex; align-items: center; gap: 10px; min-width: 0; }

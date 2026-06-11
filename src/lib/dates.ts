@@ -23,3 +23,12 @@ export function dateKey(utc: string): string {
 }
 
 export const pad2 = (n: number) => (n < 10 ? '0' : '') + n;
+
+// '47 min' / '1 h 23 m' / 'cerrado' — para el aviso de cierre próximo.
+export function timeLeftLabel(kickoffUtc: string, nowMs: number): string {
+  const diff = new Date(kickoffUtc).getTime() - nowMs;
+  if (diff <= 0) return 'cerrado';
+  const totalMin = Math.floor(diff / 60_000);
+  if (totalMin < 60) return `${totalMin} min`;
+  return `${Math.floor(totalMin / 60)} h ${pad2(totalMin % 60)} m`;
+}

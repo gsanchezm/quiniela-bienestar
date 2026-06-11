@@ -10,7 +10,9 @@ import { Flag } from '@/components/Flag';
 import type { MatchView } from '@/server/queries';
 import type { Outcome } from '@/domain/types';
 import { impliedOutcome } from '@/domain/scoring';
-import { fmtTime } from '@/lib/dates';
+import { fmtTime, timeLeftLabel } from '@/lib/dates';
+
+const CIERRA_PRONTO_MS = 6 * 3_600_000;
 
 function PickBtn({
   active,
@@ -39,13 +41,18 @@ function PickBtn({
 
 const clean = (v: string) => v.replace(/[^0-9]/g, '').slice(0, 2);
 
-export function MatchCard({ m }: { m: MatchView }) {
+export function MatchCard({ m, nowMs }: { m: MatchView; nowMs?: number }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const tbd = m.isKnockout && (!m.home || !m.away);
-  // Cerrado por silbatazo O porque ya hay resultado (el servidor también lo valida).
-  const locked = m.locked || m.result !== null;
+  const now = nowMs ?? Date.now();
+  const kickoffMs = new Date(m.kickoffUtc).getTime();
+  // Cerrado por silbatazo (también en vivo, si la página quedó abierta) o
+  // porque ya hay resultado; el servidor valida lo mismo.
+  const locked = m.locked || m.result !== null || now >= kickoffMs;
   const myPick = m.myPick;
+  const sinPick = !myPick || (myPick.outcome === null && myPick.predHome === null);
+  const cierraPronto = !locked && !tbd && kickoffMs - now <= CIERRA_PRONTO_MS;
 
   const [hg, setHg] = useState(myPick?.predHome != null ? String(myPick.predHome) : '');
   const [ag, setAg] = useState(myPick?.predAway != null ? String(myPick.predAway) : '');
@@ -123,8 +130,17 @@ export function MatchCard({ m }: { m: MatchView }) {
       <header className="match-top">
         <span className="match-tag">{m.isKnockout ? m.tag : 'GRUPO ' + m.group}</span>
         <span className="match-n led-sm">{m.id < 10 ? '0' + m.id : m.id}</span>
-        <span className="match-when" suppressHydrationWarning>
-          {m.outcome ? 'FINAL' : locked ? 'EN JUEGO / CERRADO' : `${fmtTime(m.kickoffUtc)} hrs`}
+        <span
+          className={'match-when' + (cierraPronto && sinPick ? ' match-when-urgent' : '')}
+          suppressHydrationWarning
+        >
+          {m.outcome
+            ? 'FINAL'
+            : locked
+              ? 'EN JUEGO / CERRADO'
+              : cierraPronto
+                ? `⏰ CIERRA EN ${timeLeftLabel(m.kickoffUtc, now)}`
+                : `${fmtTime(m.kickoffUtc)} hrs`}
         </span>
       </header>
 

@@ -45,6 +45,17 @@ test.describe('picks y puntos — happy paths', () => {
     await expect(card.getByRole('button', { name: 'EMPATE' })).toHaveClass(/pick-on/);
   });
 
+  test('un partido que cierra pronto muestra cuenta regresiva y el banner avisa', async ({ page }) => {
+    await login(page, E2E_USER_EMAIL);
+    // banner global: el partido 71 (sin pick) cierra en ~2 horas
+    await expect(page.locator('.notice-urgent')).toContainText('sin pick');
+    // su tarjeta (en J3) muestra la cuenta regresiva en ámbar
+    await page.getByRole('button', { name: 'J3', exact: true }).click();
+    const card = matchCard(page, '71');
+    await expect(card.locator('.match-when')).toContainText('CIERRA EN 1 h');
+    await expect(card.locator('.match-when')).toHaveClass(/match-when-urgent/);
+  });
+
   test('pick y marcador contradictorios muestran la mini advertencia', async ({ page }) => {
     await login(page, E2E_USER_EMAIL);
     const card = matchCard(page, '03'); // pick EMPATE del test anterior

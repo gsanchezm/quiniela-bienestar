@@ -19,7 +19,16 @@ export default async function globalSetup() {
     await db.user.deleteMany({});
     await db.match.updateMany({ data: { homeGoals: null, awayGoals: null, penWinner: null } });
     await db.match.updateMany({ where: { isKnockout: true }, data: { homeCode: null, awayCode: null } });
-    await db.match.update({ where: { id: 72 }, data: { kickoffUtc: new Date(Date.now() - 3_600_000) } });
+
+    // Kickoffs relativos a "ahora": la suite no debe romperse conforme el
+    // torneo real avanza y las fechas del seed quedan en el pasado.
+    const HORA = 3_600_000;
+    const abiertos = [1, 2, 3, 4, 5, 6, 73]; // los que las pruebas usan como editables
+    for (const id of abiertos) {
+      await db.match.update({ where: { id }, data: { kickoffUtc: new Date(Date.now() + 72 * HORA) } });
+    }
+    await db.match.update({ where: { id: 71 }, data: { kickoffUtc: new Date(Date.now() + 2 * HORA) } }); // cierra pronto
+    await db.match.update({ where: { id: 72 }, data: { kickoffUtc: new Date(Date.now() - 1 * HORA) } }); // ya iniciado
 
     const passwordHash = await bcrypt.hash(E2E_PASSWORD, 12);
     await db.user.createMany({

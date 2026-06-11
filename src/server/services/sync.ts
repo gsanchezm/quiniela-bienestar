@@ -32,6 +32,7 @@ export interface SyncRepo {
 }
 
 export interface SyncSummary {
+  remoteFinished: number; // partidos que el proveedor ya reporta como finalizados
   updated: number;
   unchanged: number;
   skippedManual: number; // ya había un resultado manual distinto: el manual gana
@@ -43,7 +44,13 @@ const DATE_TOLERANCE_MS = 36 * 3_600_000;
 
 export async function runSync(repo: SyncRepo, remote: ProviderMatch[]): Promise<SyncSummary> {
   const ours = (await repo.getSyncableMatches()).filter((m) => m.homeCode && m.awayCode);
-  const summary: SyncSummary = { updated: 0, unchanged: 0, skippedManual: 0, unmatched: 0 };
+  const summary: SyncSummary = {
+    remoteFinished: remote.length,
+    updated: 0,
+    unchanged: 0,
+    skippedManual: 0,
+    unmatched: 0,
+  };
 
   for (const r of remote) {
     const date = Date.parse(r.utcDate);
@@ -104,6 +111,11 @@ export class FootballDataProvider implements ResultsProvider {
       headers: { 'X-Auth-Token': this.token },
       cache: 'no-store',
     });
+    if (res.status === 429) {
+      throw new Error(
+        'football-data.org limita el plan gratuito a 10 consultas por minuto — espera un minuto y reintenta.',
+      );
+    }
     if (!res.ok) throw new Error(`football-data.org respondió ${res.status}`);
     const data = (await res.json()) as { matches?: FdMatch[] };
     return (data.matches ?? [])

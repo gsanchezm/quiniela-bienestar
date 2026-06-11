@@ -41,7 +41,7 @@ describe('sincronización con football-data.org', () => {
     const { repo, saved } = fakeRepo([partido()]);
     const resumen = await runSync(repo, [remoto()]);
     expect(saved).toEqual([{ id: 1, hg: 2, ag: 0, pen: null }]);
-    expect(resumen).toMatchObject({ updated: 1, skippedManual: 0, unmatched: 0 });
+    expect(resumen).toMatchObject({ remoteFinished: 1, updated: 1, skippedManual: 0, unmatched: 0 });
   });
 
   it('en penales toma los goles del juego y el ganador de la tanda', async () => {

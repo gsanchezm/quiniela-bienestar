@@ -202,10 +202,18 @@ export function AdminScreen({
           <span className="sync-summary">Configura FOOTBALL_DATA_TOKEN para habilitar el sync automático.</span>
         ) : null}
         {summary ? (
-          <span className="sync-summary">
-            ✓ {summary.updated} actualizados · {summary.unchanged} sin cambios · {summary.skippedManual}{' '}
-            respetados (manual) · {summary.unmatched} sin emparejar
-          </span>
+          summary.remoteFinished === 0 ? (
+            <span className="sync-summary">
+              ⏳ football-data.org aún no reporta partidos finalizados — sus marcadores tardan unos
+              minutos tras el silbatazo final. La sincronización automática corre cada 15 min; también
+              puedes capturar a mano.
+            </span>
+          ) : (
+            <span className="sync-summary">
+              ✓ {summary.updated} actualizados · {summary.unchanged} sin cambios · {summary.skippedManual}{' '}
+              respetados (manual) · {summary.unmatched} sin emparejar
+            </span>
+          )
         ) : null}
         {syncError ? <span className="sync-summary" style={{ color: 'var(--danger)' }}>{syncError}</span> : null}
       </div>

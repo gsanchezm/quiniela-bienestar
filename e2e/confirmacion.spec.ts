@@ -45,3 +45,42 @@ test('registro → confirmación manual del admin → login del jugador', async 
   await expect(page).toHaveURL(/\/partidos/);
   await expect(page.locator('.apphead-username')).toHaveText('Memo');
 });
+
+test('la sala de espera detecta la activación EN VIVO y manda al amigo al login', async ({
+  page,
+  browser,
+}) => {
+  const email = `en-vivo-${Date.now()}@e2e.mx`;
+
+  // El amigo se registra y SE QUEDA en la pantalla de éxito (sin refrescar)
+  await blockYoutube(page);
+  await page.goto('/registro');
+  await page.getByPlaceholder('Nombre', { exact: true }).fill('Viva');
+  await page.getByPlaceholder('Apellido').fill('Espera');
+  await page.getByPlaceholder('tu@correo.com').fill(email);
+  await page.getByPlaceholder('Mínimo 6 caracteres').fill('secreto1');
+  await page.getByRole('button', { name: 'REGISTRARME' }).click();
+  await expect(page.locator('.authok')).toContainText('Esperando la activación');
+
+  // En OTRO navegador, el admin lo confirma
+  const adminCtx = await browser.newContext({
+    extraHTTPHeaders: { 'x-forwarded-for': '10.77.0.12' },
+  });
+  const adminPage = await adminCtx.newPage();
+  await login(adminPage, E2E_ADMIN_EMAIL);
+  await adminPage.goto('/jugadores');
+  const filaAmigo = adminPage.locator('.admrow').filter({ hasText: email });
+  await filaAmigo.getByRole('button', { name: /Confirmar cuenta/ }).click();
+  await expect(filaAmigo.locator('.badge-warn')).toHaveCount(0); // confirmación aplicada
+  await adminCtx.close();
+
+  // La pantalla del amigo se entera sola y lo manda al login con aviso verde
+  await expect(page).toHaveURL(/\/login\?aviso=cuenta-activada/, { timeout: 20_000 });
+  await expect(page.locator('.okbar')).toContainText('Tu cuenta fue activada');
+
+  // ...y sus credenciales entran a la primera
+  await page.getByPlaceholder('tu@correo.com').fill(email);
+  await page.getByPlaceholder('••••••••').fill('secreto1');
+  await page.getByRole('button', { name: 'ENTRAR A LA CANCHA' }).click();
+  await expect(page).toHaveURL(/\/partidos/);
+});

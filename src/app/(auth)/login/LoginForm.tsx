@@ -18,6 +18,9 @@ export function LoginForm({ aviso }: { aviso?: string }) {
       {aviso === 'enlace-invalido' ? (
         <p className="alertbar">Ese enlace ya no es válido. Inicia sesión o solicita uno nuevo.</p>
       ) : null}
+      {aviso === 'cuenta-activada' ? (
+        <p className="okbar">✅ ¡Tu cuenta fue activada! Inicia sesión para llenar tu quiniela.</p>
+      ) : null}
       <form action={action}>
         <Field
           label="Correo"

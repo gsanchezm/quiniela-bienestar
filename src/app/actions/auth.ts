@@ -11,6 +11,7 @@ export interface FormState {
   ok?: boolean;
   error?: string;
   email?: string;
+  userId?: string; // post-registro: para que la pantalla detecte la activación
 }
 
 const field = (fd: FormData, name: string) => String(fd.get(name) ?? '');
@@ -26,18 +27,20 @@ async function clientIp(): Promise<string> {
 export async function signupAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const email = field(formData, 'email');
   if (!rateLimit(`signup:${await clientIp()}`, 5, 60 * MIN).ok) return { error: RATE_MSG };
+  let userId: string;
   try {
-    await signup(realAuthDeps(), {
+    const user = await signup(realAuthDeps(), {
       nombre: field(formData, 'nombre'),
       apellido: field(formData, 'apellido'),
       email,
       password: field(formData, 'password'),
     });
+    userId = user.id;
   } catch (e) {
     if (e instanceof AuthError) return { error: e.message };
     throw e;
   }
-  return { ok: true, email: email.trim().toLowerCase() };
+  return { ok: true, email: email.trim().toLowerCase(), userId };
 }
 
 export async function loginAction(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -50,9 +53,14 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
     const user = await login(realAuthDeps(), email, field(formData, 'password'));
     userId = user.id;
   } catch (e) {
-    // Regresa el correo para que el reset de formularios de React 19
-    // no se lo borre al usuario tras un error.
-    if (e instanceof AuthError) return { error: e.message, email };
+    if (e instanceof AuthError) {
+      // Contraseña correcta pero cuenta sin activar: no cuenta como intento
+      // fallido — el jugador suele reintentar mientras espera al admin.
+      if (e.message.includes('no está confirmada')) clearRateLimit(rlKey);
+      // Regresa el correo para que el reset de formularios de React 19
+      // no se lo borre al usuario tras un error.
+      return { error: e.message, email };
+    }
     throw e;
   }
   clearRateLimit(rlKey); // login correcto: el contador se libera

@@ -234,6 +234,10 @@ a { color: inherit; }
   background: #341312; border: 1px solid var(--danger); border-radius: 6px;
   color: #f0928a; font-size: 13px; padding: 9px 12px;
 }
+.okbar {
+  background: #15301d; border: 1px solid #3ad06f; border-radius: 6px;
+  color: #7fe8a4; font-size: 13px; padding: 9px 12px;
+}
 
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

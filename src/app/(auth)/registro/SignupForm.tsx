@@ -1,9 +1,32 @@
 'use client';
 
 import Link from 'next/link';
-import { useActionState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useActionState, useEffect } from 'react';
 import { signupAction, type FormState } from '@/app/actions/auth';
 import { Field } from '@/components/Field';
+
+// Sala de espera: detecta en vivo cuando el admin activa la cuenta y manda
+// al jugador directo al login, sin que tenga que refrescar nada.
+function EsperandoActivacion({ userId }: { userId: string }) {
+  const router = useRouter();
+  useEffect(() => {
+    const t = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/cuenta-estado?id=${userId}`, { cache: 'no-store' });
+        const data = (await res.json()) as { confirmed?: boolean };
+        if (data.confirmed) {
+          clearInterval(t);
+          router.push('/login?aviso=cuenta-activada');
+        }
+      } catch {
+        // sin red un momento: el siguiente intento lo cubre
+      }
+    }, 4000);
+    return () => clearInterval(t);
+  }, [userId, router]);
+  return <p className="authhint">⏳ Esperando la activación… esta pantalla te llevará sola al login.</p>;
+}
 
 export function SignupForm() {
   const [state, action, pending] = useActionState<FormState, FormData>(signupAction, {});
@@ -19,6 +42,10 @@ export function SignupForm() {
           iniciar sesión.
         </p>
         <p className="authhint">Tip: avísale por WhatsApp para que te active más rápido ⚽</p>
+        {state.userId ? <EsperandoActivacion userId={state.userId} /> : null}
+        <Link className="linklike" href="/login">
+          Ya tengo cuenta activada — iniciar sesión
+        </Link>
       </div>
     );
   }

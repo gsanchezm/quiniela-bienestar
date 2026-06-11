@@ -17,6 +17,8 @@ const grupos: PickMatch = {
   isKnockout: false,
   homeCode: 'MEX',
   awayCode: 'RSA',
+  homeGoals: null,
+  awayGoals: null,
 };
 const koDefinido: PickMatch = {
   id: 73,
@@ -24,8 +26,11 @@ const koDefinido: PickMatch = {
   isKnockout: true,
   homeCode: 'MEX',
   awayCode: 'BRA',
+  homeGoals: null,
+  awayGoals: null,
 };
 const koSinEquipos: PickMatch = { ...koDefinido, id: 74, homeCode: null, awayCode: null };
+const conResultado: PickMatch = { ...grupos, id: 5, homeGoals: 2, awayGoals: 0 };
 
 function fakeRepo(matches: PickMatch[]): PicksRepo & { picks: Map<string, PickValue> } {
   const picks = new Map<string, PickValue>();
@@ -63,6 +68,11 @@ describe('picks 1X2', () => {
     const repo = fakeRepo([grupos]);
     const alSilbatazo = new Date('2026-06-11T19:00:00Z');
     await expect(setOutcome(repo, 'u1', 1, 'H', alSilbatazo)).rejects.toThrow(/cerraron/);
+  });
+
+  it('rechaza picks cuando el partido ya tiene resultado capturado', async () => {
+    const repo = fakeRepo([conResultado]);
+    await expect(setOutcome(repo, 'u1', 5, 'H', FUTURO)).rejects.toThrow(/ya tiene resultado/);
   });
 
   it('rechaza picks en llaves sin equipos asignados', async () => {

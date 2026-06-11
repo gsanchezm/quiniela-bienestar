@@ -25,3 +25,7 @@ npm-debug.log*
 /prisma/dev.db
 
 *.tsbuildinfo
+
+# playwright
+/test-results/
+/playwright-report/

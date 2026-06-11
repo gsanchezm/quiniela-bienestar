@@ -22,7 +22,10 @@ pnpm dev                      # http://localhost:3000
 
 - Sin `RESEND_API_KEY`, los correos (confirmación, reset, cambio de email) **se imprimen en
   la consola del servidor** con su enlace — el flujo completo funciona en dev.
-- `pnpm test` corre la suite (dominio de puntos, cierre por kickoff, privacidad, servicios, sync).
+- `pnpm test` corre la suite unitaria (dominio de puntos, cierre por kickoff, privacidad, servicios, sync).
+- `pnpm test:e2e` corre la suite Playwright (happy paths, sad paths y responsive móvil/escritorio).
+  Necesita el Postgres local corriendo (`pnpm exec prisma dev --name quiniela`, migrado y con seed)
+  y Chromium instalado (`pnpm exec playwright install chromium`); el server de Next lo levanta sola.
 - `pnpm build` compila producción.
 
 ## Despliegue en Render (blueprint)

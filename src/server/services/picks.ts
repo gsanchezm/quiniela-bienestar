@@ -11,6 +11,8 @@ export interface PickMatch {
   isKnockout: boolean;
   homeCode: string | null;
   awayCode: string | null;
+  homeGoals: number | null;
+  awayGoals: number | null;
 }
 
 // Puerto mínimo (DIP): los tests usan un fake; producción usa prismaPicksRepo.
@@ -31,6 +33,11 @@ async function openMatch(repo: PicksRepo, matchId: number, now: Date): Promise<P
     throw new PickError('Equipos por definir al cerrar la fase anterior.');
   }
   if (isLocked(m.kickoffUtc, now)) throw new PickError('Los picks de este partido ya cerraron.');
+  // Defensa extra: con resultado capturado (aunque el reloj diga otra cosa,
+  // p. ej. una captura adelantada del admin) ya nadie puede mover su pick.
+  if (m.homeGoals !== null || m.awayGoals !== null) {
+    throw new PickError('Este partido ya tiene resultado.');
+  }
   return m;
 }
 
@@ -102,7 +109,15 @@ export function prismaPicksRepo(db: PrismaClient): PicksRepo {
     async getMatch(id) {
       return db.match.findUnique({
         where: { id },
-        select: { id: true, kickoffUtc: true, isKnockout: true, homeCode: true, awayCode: true },
+        select: {
+          id: true,
+          kickoffUtc: true,
+          isKnockout: true,
+          homeCode: true,
+          awayCode: true,
+          homeGoals: true,
+          awayGoals: true,
+        },
       });
     },
     async getPick(userId, matchId) {

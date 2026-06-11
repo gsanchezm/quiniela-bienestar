@@ -42,7 +42,8 @@ export function MatchCard({ m }: { m: MatchView }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const tbd = m.isKnockout && (!m.home || !m.away);
-  const locked = m.locked;
+  // Cerrado por silbatazo O porque ya hay resultado (el servidor también lo valida).
+  const locked = m.locked || m.result !== null;
   const myPick = m.myPick;
 
   const [hg, setHg] = useState(myPick?.predHome != null ? String(myPick.predHome) : '');

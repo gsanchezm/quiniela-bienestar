@@ -38,6 +38,7 @@ export function ProfileForm({
             name="password"
             type="password"
             placeholder="Déjalo vacío para no cambiarla"
+            autoComplete="new-password"
             error={state.error}
           />
           <div className="profile-actions">

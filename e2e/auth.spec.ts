@@ -82,6 +82,18 @@ test.describe('autenticación — sad paths', () => {
     await expect(page).toHaveURL(/\/login/);
   });
 
+  test('los formularios declaran autocomplete para los password managers', async ({ page }) => {
+    await blockYoutube(page);
+    await page.goto('/login');
+    await expect(page.getByPlaceholder('••••••••')).toHaveAttribute('autocomplete', 'current-password');
+    await expect(page.getByPlaceholder('tu@correo.com')).toHaveAttribute('autocomplete', 'email');
+    await page.goto('/registro');
+    await expect(page.getByPlaceholder('Mínimo 6 caracteres')).toHaveAttribute(
+      'autocomplete',
+      'new-password',
+    );
+  });
+
   test('un enlace de confirmación inválido avisa en el login', async ({ page }) => {
     await blockYoutube(page);
     await page.goto('/confirmar/un-token-que-no-existe');

@@ -7,6 +7,7 @@ export function Field({
   placeholder,
   defaultValue,
   autoFocus,
+  autoComplete,
   error,
 }: {
   label: string;
@@ -15,6 +16,7 @@ export function Field({
   placeholder?: string;
   defaultValue?: string;
   autoFocus?: boolean;
+  autoComplete?: string;
   error?: string | null;
 }) {
   return (
@@ -27,6 +29,7 @@ export function Field({
         placeholder={placeholder ?? ''}
         defaultValue={defaultValue}
         autoFocus={!!autoFocus}
+        autoComplete={autoComplete}
       />
       {error ? <span className="field-msg">{error}</span> : null}
     </label>

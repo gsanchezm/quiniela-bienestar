@@ -30,12 +30,13 @@ export function SignupForm() {
           <Field label="Nombre" name="nombre" placeholder="Nombre" autoFocus />
           <Field label="Apellido" name="apellido" placeholder="Apellido" />
         </div>
-        <Field label="Correo" name="email" type="email" placeholder="tu@correo.com" />
+        <Field label="Correo" name="email" type="email" placeholder="tu@correo.com" autoComplete="email" />
         <Field
           label="Contraseña"
           name="password"
           type="password"
           placeholder="Mínimo 6 caracteres"
+          autoComplete="new-password"
           error={state.error}
         />
         <p className="authhint">Tu foto de perfil la puedes agregar después desde Configuración.</p>

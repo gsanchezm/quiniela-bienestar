@@ -25,6 +25,7 @@ export function LoginForm({ aviso }: { aviso?: string }) {
           type="email"
           placeholder="tu@correo.com"
           autoFocus
+          autoComplete="email"
           defaultValue={state.email}
         />
         <Field
@@ -32,6 +33,7 @@ export function LoginForm({ aviso }: { aviso?: string }) {
           name="password"
           type="password"
           placeholder="••••••••"
+          autoComplete="current-password"
           error={state.error}
         />
         <button className="btn btn-primary" type="submit" disabled={pending}>

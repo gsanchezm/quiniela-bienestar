@@ -23,8 +23,14 @@ export function ResetForm({ token }: { token: string }) {
 
   return (
     <form action={action}>
-      <Field label="Nueva contraseña" name="password" type="password" autoFocus />
-      <Field label="Repite la contraseña" name="password2" type="password" error={state.error} />
+      <Field label="Nueva contraseña" name="password" type="password" autoFocus autoComplete="new-password" />
+      <Field
+        label="Repite la contraseña"
+        name="password2"
+        type="password"
+        autoComplete="new-password"
+        error={state.error}
+      />
       <button className="btn btn-primary" type="submit" disabled={pending}>
         {pending ? 'GUARDANDO…' : 'GUARDAR'}
       </button>

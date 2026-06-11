@@ -16,7 +16,10 @@ export function SignupForm() {
           Te mandamos un correo a <strong>{state.email}</strong>.<br />
           Haz clic en <strong>“Confirmar mi cuenta”</strong> para entrar a la cancha.
         </p>
-        <p className="authhint">¿No llega? Revisa tu carpeta de spam.</p>
+        <p className="authhint">
+          ¿No llega? Revisa tu carpeta de spam — o pídele al organizador de la quiniela que confirme tu
+          cuenta manualmente.
+        </p>
       </div>
     );
   }

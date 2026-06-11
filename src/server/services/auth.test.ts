@@ -4,6 +4,7 @@ import {
   signup,
   login,
   confirmAccount,
+  confirmUserManually,
   requestPasswordReset,
   resetPassword,
   requestEmailChange,
@@ -94,6 +95,24 @@ describe('registro y confirmación', () => {
     const { deps } = fakeDeps();
     await signup(deps, INPUT);
     await expect(signup(deps, { ...INPUT, nombre: 'Otro' })).rejects.toThrow(/ya está registrado/);
+  });
+
+  it('el registro NO falla aunque el correo no se pueda enviar (sandbox sin dominio)', async () => {
+    const { deps, users } = fakeDeps();
+    deps.sender = {
+      async send() {
+        throw new Error('Resend: solo puedes enviar a tu propio correo');
+      },
+    };
+    await expect(signup(deps, INPUT)).resolves.toMatchObject({ email: 'gil@demo.mx' });
+    expect(users.size).toBe(1); // la cuenta queda pendiente de confirmación manual
+  });
+
+  it('un admin puede confirmar la cuenta manualmente sin token', async () => {
+    const { deps, users } = fakeDeps();
+    const u = await signup(deps, INPUT);
+    await confirmUserManually(deps, u.id);
+    expect(users.get(u.id)!.confirmed).toBe(true);
   });
 
   it('confirmAccount consume el token y marca la cuenta', async () => {

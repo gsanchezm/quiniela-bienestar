@@ -141,6 +141,23 @@ export async function getStandingsView(): Promise<StandingsRowView[]> {
   }));
 }
 
+export interface PendingUserView {
+  id: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+}
+
+// Cuentas registradas que aún no confirman su correo (para que el admin
+// pueda confirmarlas manualmente cuando el correo no les llega).
+export async function getPendingUsers(): Promise<PendingUserView[]> {
+  return db.user.findMany({
+    where: { confirmed: false },
+    select: { id: true, nombre: true, apellido: true, email: true },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
 export interface PlayerPickRowView {
   match: MatchView; // myPick/myScore = los del jugador consultado (si son visibles)
   hidden: boolean;

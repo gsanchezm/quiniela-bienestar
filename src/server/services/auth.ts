@@ -83,8 +83,20 @@ export async function signup(deps: AuthDeps, input: SignupInput): Promise<AuthUs
   });
   const token = await deps.tokens.issue(user.id, 'CONFIRM');
   const mail = confirmEmail(`${deps.appUrl}/confirmar/${token}`);
-  await deps.sender.send(user.email, mail.subject, mail.html);
+  try {
+    await deps.sender.send(user.email, mail.subject, mail.html);
+  } catch (e) {
+    // Sin dominio verificado (sandbox de Resend) el envío a terceros falla.
+    // La cuenta queda pendiente y un admin puede confirmarla manualmente.
+    console.warn(`No se pudo enviar el correo de confirmación a ${user.email}:`, e);
+  }
   return user;
+}
+
+// Confirmación manual por un administrador (sin token): para cuando el
+// correo de confirmación no puede llegar al jugador.
+export async function confirmUserManually(deps: AuthDeps, userId: string): Promise<void> {
+  await deps.users.update(userId, { confirmed: true });
 }
 
 // Hash señuelo: cuando el correo no existe se verifica igual, para que el
@@ -121,7 +133,11 @@ export async function requestPasswordReset(deps: AuthDeps, email: string): Promi
   if (!user) return;
   const token = await deps.tokens.issue(user.id, 'RESET');
   const mail = resetEmail(`${deps.appUrl}/reset/${token}`);
-  await deps.sender.send(user.email, mail.subject, mail.html);
+  try {
+    await deps.sender.send(user.email, mail.subject, mail.html);
+  } catch (e) {
+    console.warn(`No se pudo enviar el correo de reset a ${user.email}:`, e);
+  }
 }
 
 export async function resetPassword(deps: AuthDeps, raw: string, newPassword: string): Promise<boolean> {
@@ -147,7 +163,12 @@ export async function requestEmailChange(deps: AuthDeps, userId: string, newEmai
   }
   const token = await deps.tokens.issue(userId, 'EMAIL_CHANGE', email);
   const mail = changeEmailEmail(`${deps.appUrl}/confirmar-email/${token}`);
-  await deps.sender.send(email, mail.subject, mail.html);
+  try {
+    await deps.sender.send(email, mail.subject, mail.html);
+  } catch {
+    // Sin el correo el cambio no puede confirmarse: avisa en el formulario.
+    throw new AuthError('No pudimos enviar el correo de confirmación a esa dirección.');
+  }
 }
 
 export async function confirmEmailChange(deps: AuthDeps, raw: string): Promise<boolean> {

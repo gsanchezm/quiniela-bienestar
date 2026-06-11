@@ -74,6 +74,20 @@ pnpm dev                      # http://localhost:3000
 4. **Privacidad**: los picks ajenos se revelan hasta que cada partido cierra (filtrado en servidor).
 5. **Resultados**: pantalla solo-admin (`ADMIN_EMAILS`); marcadores enteros 0–99, sin negativos.
 
+## Guardrails de seguridad
+
+- **Headers**: CSP estricta (solo flagcdn, YouTube embebido y `data:` para fotos), HSTS,
+  `X-Frame-Options: DENY`, `nosniff`, Referrer-Policy y Permissions-Policy en toda respuesta.
+- **Rate limiting** en memoria: login 5/15 min por IP+correo (se libera al entrar), registro 5/h,
+  "olvidé mi contraseña" 3/15 min, reset 5/15 min.
+- **Sesiones**: cookie httpOnly/secure/lax; tokens de 256 bits **hasheados en BD**; restablecer la
+  contraseña revoca todas las sesiones y cambiarla desde el perfil cierra los demás dispositivos.
+- **Sin fugas por timing**: el login verifica un hash señuelo cuando el correo no existe y el
+  `SYNC_SECRET` se compara en tiempo constante.
+- **Validación en servidor** con zod en cada mutación (marcadores 0–99, foto solo JPEG ≤ 200 KB,
+  picks bloqueados por kickoff o resultado existente) y server actions con payload ≤ 1 MB.
+- Respuestas neutras en recuperación de contraseña (no revela correos registrados).
+
 ## Estructura
 
 ```

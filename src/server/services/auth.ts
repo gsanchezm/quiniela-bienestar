@@ -38,6 +38,7 @@ export interface AuthDeps {
     ): Promise<{ userId: string; newEmail: string | null } | null>;
   };
   sender: EmailSender;
+  revokeSessions(userId: string): Promise<void>;
   hashPassword(plain: string): Promise<string>;
   verifyPassword(plain: string, hash: string): Promise<boolean>;
   appUrl: string;
@@ -86,15 +87,25 @@ export async function signup(deps: AuthDeps, input: SignupInput): Promise<AuthUs
   return user;
 }
 
+// Hash señuelo: cuando el correo no existe se verifica igual, para que el
+// tiempo de respuesta no delate qué correos están registrados.
+let decoyHash: string | null = null;
+
 export async function login(deps: AuthDeps, email: string, password: string): Promise<AuthUser> {
   const user = await deps.users.findByEmail(normalizeEmail(email));
-  if (!user || !(await deps.verifyPassword(password, user.passwordHash))) {
+  if (!decoyHash) decoyHash = await deps.hashPassword(newDecoySecret());
+  const valid = await deps.verifyPassword(password, user?.passwordHash ?? decoyHash);
+  if (!user || !valid) {
     throw new AuthError('Correo o contraseña incorrectos.');
   }
   if (!user.confirmed) {
     throw new AuthError('Tu cuenta aún no está confirmada. Revisa tu correo.');
   }
   return user;
+}
+
+function newDecoySecret(): string {
+  return `decoy-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
 }
 
 export async function confirmAccount(deps: AuthDeps, raw: string): Promise<string | null> {
@@ -121,6 +132,8 @@ export async function resetPassword(deps: AuthDeps, raw: string, newPassword: st
     passwordHash: await deps.hashPassword(newPassword),
     confirmed: true, // si puede leer su correo, la cuenta queda confirmada
   });
+  // Si alguien tenía la sesión robada, la nueva contraseña lo saca de la cancha.
+  await deps.revokeSessions(t.userId);
   return true;
 }
 

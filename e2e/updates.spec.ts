@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { login, matchCard } from './helpers';
+import { fillAdminGoals, login, matchCard } from './helpers';
 import { E2E_ADMIN_EMAIL, E2E_USER_EMAIL } from './env';
 
 // "Si la información cambia, se actualiza": corregir o borrar un resultado
@@ -34,8 +34,7 @@ test('admin captura 1-0 y el jugador ve +3 y la tabla sube', async ({ page }) =>
 
   await page.goto('/resultados');
   const row = page.locator('.admrow').filter({ hasText: 'Brasil' }).first();
-  await row.locator('.goal-input').nth(0).fill('1');
-  await row.locator('.goal-input').nth(1).fill('0');
+  await fillAdminGoals(row, '1', '0');
   await row.getByRole('button', { name: /Finalizar|Actualizar/ }).click();
   await expect(row.getByRole('button', { name: 'Actualizar' })).toBeVisible();
 
@@ -55,8 +54,7 @@ test('admin CORRIGE el marcador a 0-2 y todo se recalcula: -3 puntos y tarjeta e
 
   await page.goto('/resultados');
   const row = page.locator('.admrow').filter({ hasText: 'Brasil' }).first();
-  await row.locator('.goal-input').nth(0).fill('0');
-  await row.locator('.goal-input').nth(1).fill('2');
+  await fillAdminGoals(row, '0', '2');
   await row.getByRole('button', { name: 'Actualizar' }).click();
   await expect(row.locator('.goal-input').nth(1)).toHaveValue('2');
 

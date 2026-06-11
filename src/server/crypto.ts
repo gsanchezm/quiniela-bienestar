@@ -5,3 +5,12 @@ import crypto from 'node:crypto';
 export const hashToken = (raw: string) => crypto.createHash('sha256').update(raw).digest('hex');
 
 export const newToken = () => crypto.randomBytes(32).toString('hex');
+
+// Comparación en tiempo constante para secretos (p. ej. SYNC_SECRET):
+// un `===` permite adivinar byte por byte midiendo tiempos.
+export function safeEqual(a: string, b: string): boolean {
+  const ba = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ba.length !== bb.length) return false;
+  return crypto.timingSafeEqual(ba, bb);
+}

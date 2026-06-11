@@ -39,3 +39,12 @@ export async function destroySession(): Promise<void> {
   if (raw) await db.session.deleteMany({ where: { token: hashToken(raw) } });
   jar.delete(COOKIE);
 }
+
+// Al cambiar la contraseña desde el perfil: cierra las demás sesiones
+// (otros dispositivos) pero conserva la actual.
+export async function revokeOtherSessions(userId: string): Promise<void> {
+  const raw = (await cookies()).get(COOKIE)?.value;
+  await db.session.deleteMany({
+    where: { userId, ...(raw ? { NOT: { token: hashToken(raw) } } : {}) },
+  });
+}

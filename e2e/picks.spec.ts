@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { login, matchCard } from './helpers';
+import { fillAdminGoals, login, matchCard } from './helpers';
 import { E2E_ADMIN_EMAIL, E2E_USER_EMAIL } from './env';
 
 test.describe.configure({ mode: 'serial' });
@@ -49,9 +49,7 @@ test.describe('picks y puntos — happy paths', () => {
     await login(page, E2E_ADMIN_EMAIL);
     await page.goto('/resultados');
     const row = page.locator('.admrow').filter({ hasText: 'México' }).first();
-    const goals = row.locator('.goal-input');
-    await goals.nth(0).fill('2');
-    await goals.nth(1).fill('0');
+    await fillAdminGoals(row, '2', '0');
     await row.getByRole('button', { name: 'Finalizar' }).click();
     await expect(row.getByRole('button', { name: 'Actualizar' })).toBeVisible();
 

@@ -24,6 +24,9 @@ export function realAuthDeps(): AuthDeps {
       },
     },
     sender: getEmailSender(),
+    revokeSessions: async (userId) => {
+      await db.session.deleteMany({ where: { userId } });
+    },
     hashPassword,
     verifyPassword,
     appUrl: env.appUrl,

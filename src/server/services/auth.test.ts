@@ -22,6 +22,8 @@ function fakeDeps() {
   const users = new Map<string, AuthUser>();
   const tokens = new Map<string, { userId: string; type: string; newEmail: string | null }>();
   const sent: Sent[] = [];
+  const revoked: string[] = [];
+  const verified: string[] = []; // hashes contra los que se llamó verifyPassword
   let seq = 0;
 
   const deps: AuthDeps = {
@@ -59,11 +61,17 @@ function fakeDeps() {
         sent.push({ to, subject, html });
       },
     },
+    revokeSessions: async (userId) => {
+      revoked.push(userId);
+    },
     hashPassword: async (p) => `hash:${p}`,
-    verifyPassword: async (p, h) => h === `hash:${p}`,
+    verifyPassword: async (p, h) => {
+      verified.push(h);
+      return h === `hash:${p}`;
+    },
     appUrl: 'https://qdb.example',
   };
-  return { deps, users, sent };
+  return { deps, users, sent, revoked, verified };
 }
 
 const INPUT = { nombre: ' Gil ', apellido: 'Sánchez', email: 'GIL@Demo.MX', password: 'secreto' };
@@ -121,6 +129,12 @@ describe('login', () => {
     await expect(login(deps, 'gil@demo.mx', 'mala')).rejects.toThrow('Correo o contraseña incorrectos.');
     await expect(login(deps, 'nadie@demo.mx', 'secreto')).rejects.toThrow('Correo o contraseña incorrectos.');
   });
+
+  it('con correo inexistente TAMBIÉN verifica un hash señuelo (sin fuga por timing)', async () => {
+    const { deps, verified } = fakeDeps();
+    await expect(login(deps, 'nadie@demo.mx', 'loquesea')).rejects.toThrow();
+    expect(verified).toHaveLength(1); // se pagó el costo de bcrypt igual
+  });
 });
 
 describe('recuperación de contraseña', () => {
@@ -140,6 +154,15 @@ describe('recuperación de contraseña', () => {
     const u = [...users.values()][0];
     expect(u.passwordHash).toBe('hash:nuevaclave');
     expect(u.confirmed).toBe(true);
+  });
+
+  it('restablecer la contraseña revoca TODAS las sesiones activas del usuario', async () => {
+    const { deps, users, sent, revoked } = fakeDeps();
+    await signup(deps, INPUT);
+    await requestPasswordReset(deps, 'gil@demo.mx');
+    const raw = sent[1].html.match(/reset\/(tok\d+)/)![1];
+    await resetPassword(deps, raw, 'nuevaclave');
+    expect(revoked).toEqual([[...users.keys()][0]]);
   });
 });
 

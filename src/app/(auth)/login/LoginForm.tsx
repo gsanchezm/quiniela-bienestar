@@ -19,7 +19,14 @@ export function LoginForm({ aviso }: { aviso?: string }) {
         <p className="alertbar">Ese enlace ya no es válido. Inicia sesión o solicita uno nuevo.</p>
       ) : null}
       <form action={action}>
-        <Field label="Correo" name="email" type="email" placeholder="tu@correo.com" autoFocus />
+        <Field
+          label="Correo"
+          name="email"
+          type="email"
+          placeholder="tu@correo.com"
+          autoFocus
+          defaultValue={state.email}
+        />
         <Field
           label="Contraseña"
           name="password"

@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { profileSchema } from '@/domain/validation';
 import { db } from '@/server/db';
-import { getSessionUser } from '@/server/auth/session';
+import { getSessionUser, revokeOtherSessions } from '@/server/auth/session';
 import { hashPassword } from '@/server/auth/password';
 import { AuthError, requestEmailChange } from '@/server/services/auth';
 import { realAuthDeps } from '@/server/services/auth-deps';
@@ -48,6 +48,8 @@ export async function updateProfileAction(
         ...(data.password ? { passwordHash: await hashPassword(data.password) } : {}),
       },
     });
+    // Contraseña nueva ⇒ cierra las sesiones de otros dispositivos.
+    if (data.password) await revokeOtherSessions(user.id);
   } catch (e) {
     if (e instanceof AuthError) return { error: e.message };
     throw e;

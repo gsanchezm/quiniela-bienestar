@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { env } from '@/server/env';
 import { db } from '@/server/db';
+import { safeEqual } from '@/server/crypto';
 import { getSessionUser } from '@/server/auth/session';
 import { isAdmin } from '@/server/admin';
 import { getResultsProvider, prismaSyncRepo, runSync } from '@/server/services/sync';
@@ -11,7 +12,9 @@ export const dynamic = 'force-dynamic';
 // Lo dispara la GitHub Action (Bearer SYNC_SECRET) o un admin con sesión.
 export async function POST(req: Request): Promise<NextResponse> {
   const header = req.headers.get('authorization');
-  let authorized = Boolean(env.syncSecret && header === `Bearer ${env.syncSecret}`);
+  let authorized = Boolean(
+    env.syncSecret && header && safeEqual(header, `Bearer ${env.syncSecret}`),
+  );
   if (!authorized) {
     const user = await getSessionUser();
     authorized = Boolean(user && isAdmin(user.email));

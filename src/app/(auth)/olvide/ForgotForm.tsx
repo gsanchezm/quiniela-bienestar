@@ -16,6 +16,10 @@ export function ForgotForm() {
           <br />
           restablecer tu contraseña (vigente 2 horas).
         </p>
+        <p className="authhint">
+          ¿No te llega el correo? Pídele al organizador de la quiniela un enlace de restablecimiento —
+          te lo puede mandar por WhatsApp.
+        </p>
       </div>
     );
   }
@@ -29,6 +33,9 @@ export function ForgotForm() {
           {pending ? 'ENVIANDO…' : 'ENVIAR ENLACE'}
         </button>
       </form>
+      <p className="authhint">
+        ¿No te llega el correo? Pídele al organizador de la quiniela un enlace de restablecimiento.
+      </p>
     </>
   );
 }

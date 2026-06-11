@@ -1,0 +1,21 @@
+/* Design tokens del prototipo (se completa con el port total en la fase de UI) */
+:root {
+  --bg: #121212;
+  --panel: #1d1d1c;
+  --line: #2c2c2a;
+  --text: #f2f1ee;
+  --text-dim: #a39f98;
+  --accent: #4db53c;
+  --accent-dim: #4db53c33;
+  --danger: #e85a4f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}

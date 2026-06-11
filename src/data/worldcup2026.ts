@@ -1,0 +1,224 @@
+// Datos del Mundial 2026 — portados 1:1 de design_handoff_quiniela/js/data.js
+// Grupos y jornada 1 confirmados (sorteo 5-dic-2025); horas en UTC.
+
+export type StageId = 'J1' | 'J2' | 'J3' | 'R32' | 'R16' | 'QF' | 'SF' | 'FIN';
+
+export interface TeamInfo {
+  name: string;
+  flag: string; // código flagcdn ('mx', 'gb-eng', ...)
+  group: string; // 'A'..'L'
+}
+
+export interface MatchSeed {
+  id: number; // número oficial 1..104
+  stage: StageId;
+  group: string | null;
+  tag: string | null; // etiqueta de llave en eliminatoria
+  isKnockout: boolean;
+  homeCode: string | null;
+  awayCode: string | null;
+  kickoffUtc: string; // ISO UTC
+}
+
+export const TEAMS: Record<string, TeamInfo> = {
+  MEX: { name: 'México', flag: 'mx', group: 'A' },
+  RSA: { name: 'Sudáfrica', flag: 'za', group: 'A' },
+  KOR: { name: 'Corea del Sur', flag: 'kr', group: 'A' },
+  CZE: { name: 'Chequia', flag: 'cz', group: 'A' },
+  CAN: { name: 'Canadá', flag: 'ca', group: 'B' },
+  SUI: { name: 'Suiza', flag: 'ch', group: 'B' },
+  QAT: { name: 'Catar', flag: 'qa', group: 'B' },
+  BIH: { name: 'Bosnia y Herz.', flag: 'ba', group: 'B' },
+  BRA: { name: 'Brasil', flag: 'br', group: 'C' },
+  MAR: { name: 'Marruecos', flag: 'ma', group: 'C' },
+  HAI: { name: 'Haití', flag: 'ht', group: 'C' },
+  SCO: { name: 'Escocia', flag: 'gb-sct', group: 'C' },
+  USA: { name: 'EE.UU.', flag: 'us', group: 'D' },
+  PAR: { name: 'Paraguay', flag: 'py', group: 'D' },
+  AUS: { name: 'Australia', flag: 'au', group: 'D' },
+  TUR: { name: 'Turquía', flag: 'tr', group: 'D' },
+  GER: { name: 'Alemania', flag: 'de', group: 'E' },
+  CUR: { name: 'Curazao', flag: 'cw', group: 'E' },
+  CIV: { name: 'Costa de Marfil', flag: 'ci', group: 'E' },
+  ECU: { name: 'Ecuador', flag: 'ec', group: 'E' },
+  NED: { name: 'Países Bajos', flag: 'nl', group: 'F' },
+  JPN: { name: 'Japón', flag: 'jp', group: 'F' },
+  SWE: { name: 'Suecia', flag: 'se', group: 'F' },
+  TUN: { name: 'Túnez', flag: 'tn', group: 'F' },
+  BEL: { name: 'Bélgica', flag: 'be', group: 'G' },
+  EGY: { name: 'Egipto', flag: 'eg', group: 'G' },
+  IRN: { name: 'Irán', flag: 'ir', group: 'G' },
+  NZL: { name: 'Nueva Zelanda', flag: 'nz', group: 'G' },
+  ESP: { name: 'España', flag: 'es', group: 'H' },
+  CPV: { name: 'Cabo Verde', flag: 'cv', group: 'H' },
+  KSA: { name: 'Arabia Saudita', flag: 'sa', group: 'H' },
+  URU: { name: 'Uruguay', flag: 'uy', group: 'H' },
+  FRA: { name: 'Francia', flag: 'fr', group: 'I' },
+  SEN: { name: 'Senegal', flag: 'sn', group: 'I' },
+  IRQ: { name: 'Irak', flag: 'iq', group: 'I' },
+  NOR: { name: 'Noruega', flag: 'no', group: 'I' },
+  ARG: { name: 'Argentina', flag: 'ar', group: 'J' },
+  ALG: { name: 'Argelia', flag: 'dz', group: 'J' },
+  AUT: { name: 'Austria', flag: 'at', group: 'J' },
+  JOR: { name: 'Jordania', flag: 'jo', group: 'J' },
+  POR: { name: 'Portugal', flag: 'pt', group: 'K' },
+  COD: { name: 'RD Congo', flag: 'cd', group: 'K' },
+  UZB: { name: 'Uzbekistán', flag: 'uz', group: 'K' },
+  COL: { name: 'Colombia', flag: 'co', group: 'K' },
+  ENG: { name: 'Inglaterra', flag: 'gb-eng', group: 'L' },
+  CRO: { name: 'Croacia', flag: 'hr', group: 'L' },
+  GHA: { name: 'Ghana', flag: 'gh', group: 'L' },
+  PAN: { name: 'Panamá', flag: 'pa', group: 'L' },
+};
+
+const gm = (id: number, home: string, away: string, kickoffUtc: string, stage: StageId): MatchSeed => ({
+  id,
+  stage,
+  group: TEAMS[home].group,
+  tag: null,
+  isKnockout: false,
+  homeCode: home,
+  awayCode: away,
+  kickoffUtc,
+});
+
+const km = (id: number, kickoffUtc: string, stage: StageId, tag: string): MatchSeed => ({
+  id,
+  stage,
+  group: null,
+  tag,
+  isKnockout: true,
+  homeCode: null,
+  awayCode: null,
+  kickoffUtc,
+});
+
+export const MATCHES: MatchSeed[] = [
+  // ---------- JORNADA 1 (11–17 jun) ----------
+  gm(1, 'MEX', 'RSA', '2026-06-11T19:00:00Z', 'J1'),
+  gm(2, 'KOR', 'CZE', '2026-06-12T02:00:00Z', 'J1'),
+  gm(3, 'CAN', 'BIH', '2026-06-12T19:00:00Z', 'J1'),
+  gm(4, 'USA', 'PAR', '2026-06-13T01:00:00Z', 'J1'),
+  gm(5, 'QAT', 'SUI', '2026-06-13T03:00:00Z', 'J1'),
+  gm(6, 'BRA', 'MAR', '2026-06-13T22:00:00Z', 'J1'),
+  gm(7, 'HAI', 'SCO', '2026-06-14T01:00:00Z', 'J1'),
+  gm(8, 'AUS', 'TUR', '2026-06-14T04:00:00Z', 'J1'),
+  gm(9, 'GER', 'CUR', '2026-06-14T17:00:00Z', 'J1'),
+  gm(10, 'NED', 'JPN', '2026-06-14T20:00:00Z', 'J1'),
+  gm(11, 'CIV', 'ECU', '2026-06-14T23:00:00Z', 'J1'),
+  gm(12, 'SWE', 'TUN', '2026-06-15T02:00:00Z', 'J1'),
+  gm(13, 'ESP', 'CPV', '2026-06-15T17:00:00Z', 'J1'),
+  gm(14, 'BEL', 'EGY', '2026-06-15T22:00:00Z', 'J1'),
+  gm(15, 'KSA', 'URU', '2026-06-15T22:00:00Z', 'J1'),
+  gm(16, 'IRN', 'NZL', '2026-06-16T04:00:00Z', 'J1'),
+  gm(17, 'FRA', 'SEN', '2026-06-16T19:00:00Z', 'J1'),
+  gm(18, 'IRQ', 'NOR', '2026-06-16T22:00:00Z', 'J1'),
+  gm(19, 'ARG', 'ALG', '2026-06-17T01:00:00Z', 'J1'),
+  gm(20, 'AUT', 'JOR', '2026-06-17T04:00:00Z', 'J1'),
+  gm(21, 'POR', 'COD', '2026-06-17T17:00:00Z', 'J1'),
+  gm(22, 'ENG', 'CRO', '2026-06-17T20:00:00Z', 'J1'),
+  gm(23, 'GHA', 'PAN', '2026-06-17T23:00:00Z', 'J1'),
+  gm(24, 'UZB', 'COL', '2026-06-18T02:00:00Z', 'J1'),
+  // ---------- JORNADA 2 (18–23 jun) ----------
+  gm(25, 'CZE', 'RSA', '2026-06-18T16:00:00Z', 'J2'),
+  gm(26, 'SUI', 'BIH', '2026-06-18T19:00:00Z', 'J2'),
+  gm(27, 'CAN', 'QAT', '2026-06-18T22:00:00Z', 'J2'),
+  gm(28, 'MEX', 'KOR', '2026-06-19T03:00:00Z', 'J2'),
+  gm(29, 'USA', 'AUS', '2026-06-19T19:00:00Z', 'J2'),
+  gm(30, 'SCO', 'MAR', '2026-06-19T22:00:00Z', 'J2'),
+  gm(31, 'BRA', 'HAI', '2026-06-20T01:00:00Z', 'J2'),
+  gm(32, 'TUR', 'PAR', '2026-06-20T04:00:00Z', 'J2'),
+  gm(33, 'GER', 'CIV', '2026-06-20T17:00:00Z', 'J2'),
+  gm(34, 'ECU', 'CUR', '2026-06-20T20:00:00Z', 'J2'),
+  gm(35, 'NED', 'SWE', '2026-06-20T23:00:00Z', 'J2'),
+  gm(36, 'TUN', 'JPN', '2026-06-21T02:00:00Z', 'J2'),
+  gm(37, 'ESP', 'KSA', '2026-06-21T16:00:00Z', 'J2'),
+  gm(38, 'BEL', 'IRN', '2026-06-21T19:00:00Z', 'J2'),
+  gm(39, 'URU', 'CPV', '2026-06-21T22:00:00Z', 'J2'),
+  gm(40, 'NZL', 'EGY', '2026-06-22T01:00:00Z', 'J2'),
+  gm(41, 'FRA', 'IRQ', '2026-06-22T19:00:00Z', 'J2'),
+  gm(42, 'ARG', 'AUT', '2026-06-22T22:00:00Z', 'J2'),
+  gm(43, 'NOR', 'SEN', '2026-06-23T00:00:00Z', 'J2'),
+  gm(44, 'JOR', 'ALG', '2026-06-23T02:00:00Z', 'J2'),
+  gm(45, 'POR', 'UZB', '2026-06-23T17:00:00Z', 'J2'),
+  gm(46, 'COL', 'COD', '2026-06-23T20:00:00Z', 'J2'),
+  gm(47, 'ENG', 'GHA', '2026-06-23T21:00:00Z', 'J2'),
+  gm(48, 'PAN', 'CRO', '2026-06-23T23:00:00Z', 'J2'),
+  // ---------- JORNADA 3 (24–27 jun, simultáneos por grupo) ----------
+  gm(49, 'CZE', 'MEX', '2026-06-24T20:00:00Z', 'J3'),
+  gm(50, 'RSA', 'KOR', '2026-06-24T20:00:00Z', 'J3'),
+  gm(51, 'MAR', 'HAI', '2026-06-24T22:00:00Z', 'J3'),
+  gm(52, 'SCO', 'BRA', '2026-06-24T22:00:00Z', 'J3'),
+  gm(53, 'SUI', 'CAN', '2026-06-25T01:00:00Z', 'J3'),
+  gm(54, 'BIH', 'QAT', '2026-06-25T01:00:00Z', 'J3'),
+  gm(55, 'ECU', 'GER', '2026-06-25T20:00:00Z', 'J3'),
+  gm(56, 'CUR', 'CIV', '2026-06-25T20:00:00Z', 'J3'),
+  gm(57, 'TUR', 'USA', '2026-06-25T23:00:00Z', 'J3'),
+  gm(58, 'PAR', 'AUS', '2026-06-25T23:00:00Z', 'J3'),
+  gm(59, 'TUN', 'NED', '2026-06-26T01:00:00Z', 'J3'),
+  gm(60, 'JPN', 'SWE', '2026-06-26T01:00:00Z', 'J3'),
+  gm(61, 'NOR', 'FRA', '2026-06-26T19:00:00Z', 'J3'),
+  gm(62, 'SEN', 'IRQ', '2026-06-26T19:00:00Z', 'J3'),
+  gm(63, 'NZL', 'BEL', '2026-06-26T22:00:00Z', 'J3'),
+  gm(64, 'EGY', 'IRN', '2026-06-26T22:00:00Z', 'J3'),
+  gm(65, 'URU', 'ESP', '2026-06-27T01:00:00Z', 'J3'),
+  gm(66, 'CPV', 'KSA', '2026-06-27T01:00:00Z', 'J3'),
+  gm(67, 'JOR', 'ARG', '2026-06-27T19:00:00Z', 'J3'),
+  gm(68, 'ALG', 'AUT', '2026-06-27T19:00:00Z', 'J3'),
+  gm(69, 'PAN', 'ENG', '2026-06-27T21:00:00Z', 'J3'),
+  gm(70, 'CRO', 'GHA', '2026-06-27T21:00:00Z', 'J3'),
+  gm(71, 'COL', 'POR', '2026-06-27T23:30:00Z', 'J3'),
+  gm(72, 'COD', 'UZB', '2026-06-27T23:30:00Z', 'J3'),
+  // ---------- DIECISEISAVOS / R32 (28 jun – 3 jul) ----------
+  km(73, '2026-06-28T17:00:00Z', 'R32', 'Llave 1'),
+  km(74, '2026-06-28T20:00:00Z', 'R32', 'Llave 2'),
+  km(75, '2026-06-28T23:30:00Z', 'R32', 'Llave 3'),
+  km(76, '2026-06-29T17:00:00Z', 'R32', 'Llave 4'),
+  km(77, '2026-06-29T20:00:00Z', 'R32', 'Llave 5'),
+  km(78, '2026-06-29T23:30:00Z', 'R32', 'Llave 6'),
+  km(79, '2026-06-30T17:00:00Z', 'R32', 'Llave 7'),
+  km(80, '2026-06-30T20:00:00Z', 'R32', 'Llave 8'),
+  km(81, '2026-06-30T23:30:00Z', 'R32', 'Llave 9'),
+  km(82, '2026-07-01T17:00:00Z', 'R32', 'Llave 10'),
+  km(83, '2026-07-01T20:00:00Z', 'R32', 'Llave 11'),
+  km(84, '2026-07-01T23:30:00Z', 'R32', 'Llave 12'),
+  km(85, '2026-07-02T17:00:00Z', 'R32', 'Llave 13'),
+  km(86, '2026-07-02T21:00:00Z', 'R32', 'Llave 14'),
+  km(87, '2026-07-03T17:00:00Z', 'R32', 'Llave 15'),
+  km(88, '2026-07-03T21:00:00Z', 'R32', 'Llave 16'),
+  // ---------- OCTAVOS (4–7 jul) ----------
+  km(89, '2026-07-04T17:00:00Z', 'R16', 'Octavos 1'),
+  km(90, '2026-07-04T21:00:00Z', 'R16', 'Octavos 2'),
+  km(91, '2026-07-05T17:00:00Z', 'R16', 'Octavos 3'),
+  km(92, '2026-07-05T21:00:00Z', 'R16', 'Octavos 4'),
+  km(93, '2026-07-06T17:00:00Z', 'R16', 'Octavos 5'),
+  km(94, '2026-07-06T21:00:00Z', 'R16', 'Octavos 6'),
+  km(95, '2026-07-07T17:00:00Z', 'R16', 'Octavos 7'),
+  km(96, '2026-07-07T21:00:00Z', 'R16', 'Octavos 8'),
+  // ---------- CUARTOS (9–11 jul) ----------
+  km(97, '2026-07-09T20:00:00Z', 'QF', 'Cuartos 1'),
+  km(98, '2026-07-10T20:00:00Z', 'QF', 'Cuartos 2'),
+  km(99, '2026-07-11T17:00:00Z', 'QF', 'Cuartos 3'),
+  km(100, '2026-07-11T21:00:00Z', 'QF', 'Cuartos 4'),
+  // ---------- SEMIS / FINALES ----------
+  km(101, '2026-07-14T20:00:00Z', 'SF', 'Semifinal 1 — Dallas'),
+  km(102, '2026-07-15T20:00:00Z', 'SF', 'Semifinal 2 — Atlanta'),
+  km(103, '2026-07-18T20:00:00Z', 'FIN', 'Tercer lugar — Miami'),
+  km(104, '2026-07-19T19:00:00Z', 'FIN', 'LA FINAL — Nueva York/NJ'),
+];
+
+export const STAGES = [
+  { id: 'J1', label: 'Jornada 1', short: 'J1' },
+  { id: 'J2', label: 'Jornada 2', short: 'J2' },
+  { id: 'J3', label: 'Jornada 3', short: 'J3' },
+  { id: 'R32', label: 'Dieciseisavos', short: '16vos' },
+  { id: 'R16', label: 'Octavos', short: '8vos' },
+  { id: 'QF', label: 'Cuartos', short: '4tos' },
+  { id: 'SF', label: 'Semifinales', short: 'Semis' },
+  { id: 'FIN', label: 'La Final', short: 'Final' },
+] as const satisfies ReadonlyArray<{ id: StageId; label: string; short: string }>;
+
+export const KICKOFF = '2026-06-11T19:00:00Z';
+
+export const flagUrl = (code: string) => `https://flagcdn.com/h40/${code}.png`;
+export const flagUrl2x = (code: string) => `https://flagcdn.com/h80/${code}.png`;

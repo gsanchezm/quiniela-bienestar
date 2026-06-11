@@ -1,0 +1,23 @@
+# Dispara la sincronización de marcadores cada 15 minutos durante el Mundial.
+# Secrets requeridos en el repo: APP_URL y SYNC_SECRET (los mismos de Render).
+name: Sincronizar resultados
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Llamar al endpoint de sync
+        run: |
+          now=$(date -u +%Y%m%d)
+          if [ "$now" -lt 20260611 ] || [ "$now" -gt 20260721 ]; then
+            echo "Fuera de la ventana del Mundial (11-jun a 19-jul-2026); no se llama al sync."
+            exit 0
+          fi
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${{ secrets.SYNC_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/sync"

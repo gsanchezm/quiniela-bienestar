@@ -586,3 +586,164 @@ a { color: inherit; }
   .car-head { font-size: 17px; }
   .authcard-flat { border-left: none; border-top: 1px solid var(--line); }
 }
+
+/* ---------- bracket / cuadro de eliminatorias (port de js/bracket.jsx) ---------- */
+.bk-wrap {
+  position: relative; left: 50%; transform: translateX(-50%);
+  width: min(1340px, 96vw);
+}
+.bk-hint {
+  font-family: var(--head-font); font-size: 11.5px; letter-spacing: 0.08em;
+  color: var(--ink-faint); text-transform: uppercase; margin: 0 2px 12px;
+}
+.bk-scroll { overflow-x: auto; overflow-y: hidden; padding: 4px 0 14px; }
+.bk-scroll::-webkit-scrollbar { height: 8px; }
+.bk-scroll::-webkit-scrollbar-thumb { background: var(--panel2); border-radius: 4px; }
+.bk-inner { margin: 0 auto; }
+.bk-sizer { margin: 0 auto; }
+.bk-heads { display: flex; margin-bottom: 10px; }
+.bk-head {
+  flex: none; text-align: center;
+  font-family: var(--head-font); font-weight: 600; font-size: 12px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--ink-faint);
+}
+.bk-head-on { color: var(--accent); }
+.bk { display: flex; align-items: stretch; }
+.bk-col { flex: none; width: 122px; display: flex; flex-direction: column; justify-content: space-around; }
+.bk-conn { flex: none; width: 24px; align-self: stretch; }
+.bk-conn svg { display: block; width: 100%; height: 100%; }
+.bk-conn path { fill: none; stroke: #3d3b37; stroke-width: 1.5; }
+
+/* caja de partido */
+.bk-mt {
+  background: linear-gradient(180deg, var(--panel) 0%, var(--bg2) 140%);
+  border: 1px solid var(--line); border-radius: 6px; overflow: hidden;
+  transition: border-color 0.12s ease, opacity 0.12s ease;
+}
+.bk-mt-dim { opacity: 0.5; }
+.bk-mt-top {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  width: 100%; padding: 3px 8px; background: rgba(0,0,0,0.22);
+  border: none; border-bottom: 1px solid var(--line);
+  color: inherit; font: inherit; text-align: left; cursor: pointer;
+  transition: background 0.12s ease;
+}
+.bk-mt-top:hover { background: rgba(77,181,60,0.12); }
+.bk-mt-tag {
+  flex: 1; min-width: 0;
+  font-family: var(--head-font); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bk-mt-pred {
+  font-family: var(--head-font); font-size: 9px; letter-spacing: 0.04em; color: var(--accent); white-space: nowrap;
+}
+.bk-mt-when { font-family: var(--head-font); font-size: 9px; letter-spacing: 0.06em; color: var(--ink-dim); white-space: nowrap; }
+.bk-mt-when-final { color: var(--accent); }
+.bk-mt-edit { font-size: 9px; color: var(--ink-faint); }
+.bk-mt-top:hover .bk-mt-edit { color: var(--accent); }
+
+.bk-team {
+  display: flex; align-items: center; gap: 7px; width: 100%;
+  background: none; border: none; border-bottom: 1px solid var(--line);
+  color: var(--ink); padding: 6px 8px; text-align: left; min-height: 30px;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.bk-team:last-child { border-bottom: none; }
+.bk-team.bk-team-r { flex-direction: row-reverse; }
+.bk-team.bk-team-r .bk-team-name { text-align: right; }
+.bk-team .flag { box-shadow: 0 1px 3px rgba(0,0,0,0.5); border-radius: 2px; }
+.bk-team-name {
+  flex: 1; min-width: 0; font-family: var(--head-font); font-weight: 600; font-size: 12.5px;
+  letter-spacing: 0.02em; text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bk-team-score { font-size: 14px; min-width: 14px; text-align: center; }
+.bk-team-score i { font-style: normal; font-size: 9px; color: var(--ink-faint); margin-left: 1px; }
+.bk-team-tick { color: var(--accent); font-size: 11px; }
+.bk-team:hover:not(:disabled) { background: rgba(77,181,60,0.10); color: var(--accent); }
+.bk-team:disabled { cursor: default; }
+.bk-team-on { background: var(--accent-dim); color: var(--accent); }
+.bk-team-on .bk-team-name { font-weight: 700; }
+.bk-team-win { background: rgba(77,181,60,0.12); animation: bk-advance 0.6s ease-out 1; }
+.bk-team-win .bk-team-name { color: var(--ink); }
+.bk-team-r.bk-team-win { animation-name: bk-advance-r; }
+.bk-team-dim { opacity: 0.5; }
+.bk-team-hit { background: #15301d; color: #7fe8a4; opacity: 1; }
+.bk-team-hit .bk-team-name { color: #7fe8a4; }
+.bk-team-miss { background: #341312; color: #f0928a; opacity: 1; }
+.bk-team-miss .bk-team-name { color: #f0928a; }
+
+/* columna central */
+.bk-center { flex: none; position: relative; display: flex; align-items: center; justify-content: center; }
+.bk-center .bk-mt-final {
+  width: 150px; border-color: #c9a437;
+  box-shadow: 0 0 0 1px rgba(201,164,55,0.4), 0 10px 30px rgba(0,0,0,0.5);
+}
+.bk-center .bk-mt-final .bk-mt-top { background: rgba(201,164,55,0.14); border-bottom-color: rgba(201,164,55,0.35); }
+.bk-center .bk-mt-final .bk-mt-tag { color: #e0c46a; }
+.bk-center .bk-mt-final .bk-team { min-height: 36px; }
+.bk-center .bk-mt-final .bk-team-name { font-size: 13.5px; }
+
+.bk-champ {
+  position: absolute; left: 0; right: 0; top: 11%;
+  display: flex; flex-direction: column; align-items: center; gap: 7px;
+}
+.bk-champ-emblem {
+  width: 72px; height: 72px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 50% 35%, rgba(201,164,55,0.22), rgba(201,164,55,0.05));
+  border: 1.5px solid rgba(201,164,55,0.5);
+}
+.bk-champ-emblem-won { border-color: #c9a437; box-shadow: 0 0 22px rgba(201,164,55,0.4); }
+.bk-champ-emblem .flag { box-shadow: 0 2px 8px rgba(0,0,0,0.6); border-radius: 3px; }
+.bk-champ-logo { width: 52px; height: auto; mix-blend-mode: screen; opacity: 0.92; }
+.bk-champ-label {
+  font-family: var(--head-font); font-weight: 700; font-size: 12.5px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: #e0c46a; text-align: center;
+}
+
+.bk-third { position: absolute; left: 0; right: 0; bottom: 9%; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.bk-third-label {
+  font-family: var(--head-font); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-faint);
+}
+.bk-third .bk-mt { width: 132px; opacity: 0.92; }
+.bk-third .bk-team { min-height: 26px; padding: 4px 8px; }
+.bk-third .bk-team-name { font-size: 11.5px; }
+
+/* animación de avance del ganador (solo al definirse el resultado) */
+@keyframes bk-advance {
+  0% { transform: translateX(0); box-shadow: inset 0 0 0 0 transparent; }
+  35% { transform: translateX(6px); box-shadow: inset 0 0 0 2px var(--accent-dim); }
+  100% { transform: translateX(0); box-shadow: inset 0 0 0 0 transparent; }
+}
+@keyframes bk-advance-r {
+  0% { transform: translateX(0); box-shadow: inset 0 0 0 0 transparent; }
+  35% { transform: translateX(-6px); box-shadow: inset 0 0 0 2px var(--accent-dim); }
+  100% { transform: translateX(0); box-shadow: inset 0 0 0 0 transparent; }
+}
+
+/* hoja inferior para el marcador exacto (+2) — reusa MatchCard */
+.bk-sheet-backdrop {
+  position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.6);
+  display: flex; align-items: flex-end; justify-content: center; animation: bk-fade 0.15s ease-out;
+}
+.bk-sheet {
+  width: min(560px, 100%); background: var(--bg2);
+  border: 1px solid var(--line); border-bottom: none; border-radius: 14px 14px 0 0;
+  padding: 10px 12px 18px; max-height: 88vh; overflow-y: auto;
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.6); animation: bk-rise 0.2s ease-out;
+}
+.bk-sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.bk-sheet-title {
+  font-family: var(--head-font); font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-dim);
+}
+.bk-sheet-close {
+  background: none; border: none; color: var(--ink-faint); font-size: 18px; line-height: 1; cursor: pointer; padding: 4px 8px;
+}
+.bk-sheet-close:hover { color: var(--accent); }
+@keyframes bk-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes bk-rise { from { transform: translateY(24px); opacity: 0.6; } to { transform: translateY(0); opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .bk-team-win, .bk-team-r.bk-team-win, .bk-sheet-backdrop, .bk-sheet { animation: none; }
+}

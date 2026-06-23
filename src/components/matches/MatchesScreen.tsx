@@ -6,10 +6,14 @@ import type { MatchView } from '@/server/queries';
 import { dateKey, fmtDate } from '@/lib/dates';
 import { MatchCard } from './MatchCard';
 import { StageBar } from './StageBar';
+import { KnockoutBracket } from './bracket/KnockoutBracket';
 
 // Pantalla de Partidos (port de js/matches.jsx). La agrupación por fecha usa
 // la hora LOCAL del navegador, así que se renderiza tras montar.
 const VENTANA_AVISO_MS = 12 * 3_600_000;
+
+// A partir de 16vos la fase se muestra como cuadro/bracket en vez de lista.
+const KO_STAGES: StageId[] = ['R32', 'R16', 'QF', 'SF', 'FIN'];
 
 export function MatchesScreen({
   matches,
@@ -58,6 +62,7 @@ export function MatchesScreen({
 
   const pickable = list.filter((m) => !(m.isKnockout && (!m.home || !m.away)));
   const done = pickable.filter((m) => m.myPick && (m.myPick.outcome !== null || m.myPick.predHome !== null)).length;
+  const isKo = KO_STAGES.includes(stage);
 
   return (
     <div className="screen">
@@ -87,17 +92,23 @@ export function MatchesScreen({
               {urgentes === 1 ? 'cierra' : 'cierran'} en las próximas 12 horas — ¡no te duermas!
             </div>
           )}
-          {groups.map((g) => (
-            <section key={g.key} className="dategroup">
-              <h3 className="datehead">{g.label}</h3>
-              <div className="matchlist">
-                {g.items.map((m) => (
-                  <MatchCard key={m.id} m={m} nowMs={nowMs} />
-                ))}
-              </div>
-            </section>
-          ))}
-          {groups.length === 0 && <div className="empty">No hay partidos en esta fase todavía.</div>}
+          {isKo ? (
+            <KnockoutBracket matches={matches} highlight={stage} nowMs={nowMs} />
+          ) : (
+            <>
+              {groups.map((g) => (
+                <section key={g.key} className="dategroup">
+                  <h3 className="datehead">{g.label}</h3>
+                  <div className="matchlist">
+                    {g.items.map((m) => (
+                      <MatchCard key={m.id} m={m} nowMs={nowMs} />
+                    ))}
+                  </div>
+                </section>
+              ))}
+              {groups.length === 0 && <div className="empty">No hay partidos en esta fase todavía.</div>}
+            </>
+          )}
         </>
       )}
     </div>

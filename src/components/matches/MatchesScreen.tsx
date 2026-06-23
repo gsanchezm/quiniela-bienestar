@@ -11,8 +11,14 @@ import { StageBar } from './StageBar';
 // la hora LOCAL del navegador, así que se renderiza tras montar.
 const VENTANA_AVISO_MS = 12 * 3_600_000;
 
-export function MatchesScreen({ matches }: { matches: MatchView[] }) {
-  const [stage, setStage] = useState<StageId>('J1');
+export function MatchesScreen({
+  matches,
+  initialStage = 'J1',
+}: {
+  matches: MatchView[];
+  initialStage?: StageId;
+}) {
+  const [stage, setStage] = useState<StageId>(initialStage);
   const [mounted, setMounted] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
 

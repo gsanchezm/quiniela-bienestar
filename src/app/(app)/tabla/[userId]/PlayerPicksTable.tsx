@@ -9,8 +9,14 @@ import { StageBar } from '@/components/matches/StageBar';
 
 // Detalle de picks por jugador (port de js/standings.jsx PlayerDetail).
 // La ocultación de picks ajenos ya viene aplicada desde el servidor.
-export function PlayerPicksTable({ rows }: { rows: PlayerPickRowView[] }) {
-  const [stage, setStage] = useState<StageId>('J1');
+export function PlayerPicksTable({
+  rows,
+  initialStage = 'J1',
+}: {
+  rows: PlayerPickRowView[];
+  initialStage?: StageId;
+}) {
+  const [stage, setStage] = useState<StageId>(initialStage);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 

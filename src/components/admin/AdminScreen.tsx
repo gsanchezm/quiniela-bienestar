@@ -164,12 +164,14 @@ export function AdminScreen({
   matches,
   teams,
   syncAvailable,
+  initialStage = 'J1',
 }: {
   matches: MatchView[];
   teams: TeamView[];
   syncAvailable: boolean;
+  initialStage?: StageId;
 }) {
-  const [stage, setStage] = useState<StageId>('J1');
+  const [stage, setStage] = useState<StageId>(initialStage);
   const [pending, startTransition] = useTransition();
   const [summary, setSummary] = useState<SyncSummary | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);

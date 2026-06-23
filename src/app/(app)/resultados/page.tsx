@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { AdminScreen } from '@/components/admin/AdminScreen';
+import { currentStage } from '@/domain/stages';
 import { db } from '@/server/db';
 import { env } from '@/server/env';
 import { getSessionUser } from '@/server/auth/session';
@@ -21,5 +22,13 @@ export default async function ResultadosPage() {
     }),
   ]);
 
-  return <AdminScreen matches={matches} teams={teams} syncAvailable={Boolean(env.footballDataToken)} />;
+  const initialStage = currentStage(matches, Date.now());
+  return (
+    <AdminScreen
+      matches={matches}
+      teams={teams}
+      syncAvailable={Boolean(env.footballDataToken)}
+      initialStage={initialStage}
+    />
+  );
 }

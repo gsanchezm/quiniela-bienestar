@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { Avatar } from '@/components/Avatar';
+import { currentStage } from '@/domain/stages';
 import { getSessionUser } from '@/server/auth/session';
 import { getPlayerPicksView } from '@/server/queries';
 import { PlayerPicksTable } from './PlayerPicksTable';
@@ -14,6 +15,10 @@ export default async function JugadorPage({ params }: { params: Promise<{ userId
   const view = await getPlayerPicksView(userId, me.id);
   if (!view) notFound();
   const isMe = view.owner.id === me.id;
+  const initialStage = currentStage(
+    view.rows.map((r) => r.match),
+    Date.now(),
+  );
 
   return (
     <div className="screen">
@@ -30,7 +35,7 @@ export default async function JugadorPage({ params }: { params: Promise<{ userId
           <span className="player-sub">Participante</span>
         </div>
       </div>
-      <PlayerPicksTable rows={view.rows} />
+      <PlayerPicksTable rows={view.rows} initialStage={initialStage} />
     </div>
   );
 }

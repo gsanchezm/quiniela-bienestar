@@ -108,9 +108,14 @@ test.describe('picks — sad paths', () => {
   test('una llave de eliminatoria sin equipos no permite picks', async ({ page }) => {
     await login(page, E2E_USER_EMAIL);
     await page.getByRole('button', { name: '16vos' }).click();
-    const card = matchCard(page, '73');
-    await expect(card.locator('.match-tbd')).toContainText('Equipos por definir');
-    await expect(card.locator('.pick')).toHaveCount(0);
+    // En eliminatoria la fase se muestra como cuadro/bracket: la llave 1
+    // (partido 73) está sin equipos, así que muestra "Por definir" y sus
+    // botones de equipo quedan deshabilitados (no se puede elegir ganador).
+    const box = page.locator('.bk-mt').filter({ has: page.getByText(/^Llave 1$/) });
+    await expect(box.locator('.bk-team-name').first()).toHaveText('Por definir');
+    for (const b of await box.locator('.bk-team').all()) {
+      await expect(b).toBeDisabled();
+    }
   });
 
   test('los inputs de marcador limpian letras, negativos y recortan a 2 dígitos', async ({ page }) => {

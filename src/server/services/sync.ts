@@ -1,6 +1,8 @@
 import type { PrismaClient } from '@prisma/client';
 import { env } from '@/server/env';
 import { mapFdStage, planKnockoutAssignments, type Llave, type ProviderFixture } from '@/domain/knockout-assign';
+import type { EmailSender } from '@/server/email/sender';
+import { knockoutAssignedEmail } from '@/server/email/templates';
 
 // Partido remoto ya normalizado por el proveedor (football-data.org v4).
 export interface ProviderMatch {
@@ -225,6 +227,49 @@ export function prismaKnockoutAssignRepo(db: PrismaClient): KnockoutAssignRepo {
       await db.match.update({ where: { id }, data: { homeCode: home, awayCode: away, kickoffUtc } });
     },
   };
+}
+
+// --- Orquestación: goles + asignación + aviso -----------------------------
+
+export interface FullSyncDeps {
+  provider: ResultsProvider;
+  syncRepo: SyncRepo;
+  assignRepo: KnockoutAssignRepo;
+  sender: EmailSender;
+  adminEmails: string[];
+  appUrl: string;
+}
+
+export interface FullSyncSummary {
+  sync: SyncSummary;
+  assign: KnockoutAssignResult;
+}
+
+export async function runFullSync(deps: FullSyncDeps, now: Date = new Date()): Promise<FullSyncSummary> {
+  const all = await deps.provider.fetchAll();
+
+  // Goles (sin cambios respecto a hoy).
+  const sync = await runSync(deps.syncRepo, selectFinished(all));
+
+  // Asignación KO, aislada: su fallo no rompe los goles.
+  let assign: KnockoutAssignResult = { assigned: [], anomalies: [] };
+  try {
+    assign = await runKnockoutAutoAssign(deps.assignRepo, selectKnockoutFixtures(all), now);
+  } catch (e) {
+    assign = { assigned: [], anomalies: [`Fallo en auto-asignación: ${e instanceof Error ? e.message : 'error'}`] };
+  }
+
+  // Aviso best-effort: solo si hubo novedades o anomalías; su fallo no rompe el sync.
+  if ((assign.assigned.length > 0 || assign.anomalies.length > 0) && deps.adminEmails.length > 0) {
+    try {
+      const { subject, html } = knockoutAssignedEmail(assign.assigned, assign.anomalies, deps.appUrl);
+      await deps.sender.send(deps.adminEmails.join(', '), subject, html);
+    } catch (e) {
+      console.error('No se pudo enviar el aviso de auto-asignación:', e);
+    }
+  }
+
+  return { sync, assign };
 }
 
 export function getResultsProvider(): ResultsProvider | null {

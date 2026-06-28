@@ -4,13 +4,16 @@ import {
   selectFinished,
   selectKnockoutFixtures,
   runKnockoutAutoAssign,
+  runFullSync,
   type ProviderMatch,
   type ProviderRawMatch,
   type SyncRepo,
   type SyncMatch,
   type KnockoutAssignRepo,
+  type FullSyncDeps,
 } from './sync';
 import type { Llave, ProviderFixture } from '@/domain/knockout-assign';
+import type { EmailSender } from '@/server/email/sender';
 
 const rawMatch = (over: Partial<ProviderRawMatch> = {}): ProviderRawMatch => ({
   utcDate: '2026-06-11T19:00:00Z',
@@ -198,5 +201,121 @@ describe('runKnockoutAutoAssign', () => {
     expect(writes).toEqual([]);
     expect(result.assigned).toEqual([]);
     expect(result.anomalies.some((a) => a.includes('ZZZ'))).toBe(true);
+  });
+});
+
+function fakeSender() {
+  const sent: Array<{ to: string; subject: string }> = [];
+  const sender: EmailSender = {
+    async send(to, subject) {
+      sent.push({ to, subject });
+    },
+  };
+  return { sender, sent };
+}
+
+function buildDeps(over: Partial<FullSyncDeps>, sender: EmailSender): FullSyncDeps {
+  return {
+    provider: { async fetchAll() { return []; }, async fetchFinished() { return []; } },
+    syncRepo: { async getSyncableMatches() { return []; }, async setResult() {} },
+    assignRepo: {
+      async getKnockoutLlaves() { return []; },
+      async getKnownTeamCodes() { return new Set(); },
+      async assignTeams() {},
+    },
+    sender,
+    adminEmails: ['admin@demo.mx'],
+    appUrl: 'https://quiniela.example',
+    ...over,
+  };
+}
+
+describe('runFullSync', () => {
+  const now = new Date('2026-06-28T10:00:00Z');
+
+  it('asigna cruces KO nuevos y manda correo al admin', async () => {
+    const { sender, sent } = fakeSender();
+    const raw: ProviderRawMatch[] = [
+      {
+        utcDate: '2026-06-28T18:30:00Z',
+        status: 'TIMED',
+        stage: 'LAST_32',
+        homeTeam: { tla: 'ESP' },
+        awayTeam: { tla: 'URU' },
+        score: { winner: null, duration: 'REGULAR', fullTime: { home: null, away: null } },
+      },
+    ];
+    const writes: number[] = [];
+    const deps = buildDeps(
+      {
+        provider: { async fetchAll() { return raw; }, async fetchFinished() { return []; } },
+        assignRepo: {
+          async getKnockoutLlaves() {
+            return [{ id: 73, stage: 'R32', tag: null, homeCode: null, awayCode: null, kickoffUtc: new Date('2026-06-28T17:00:00Z') }];
+          },
+          async getKnownTeamCodes() { return new Set(['ESP', 'URU']); },
+          async assignTeams(id) { writes.push(id); },
+        },
+      },
+      sender,
+    );
+    const summary = await runFullSync(deps, now);
+    expect(writes).toEqual([73]);
+    expect(summary.assign.assigned).toHaveLength(1);
+    expect(sent).toHaveLength(1);
+    expect(sent[0].to).toBe('admin@demo.mx');
+  });
+
+  it('no manda correo cuando no hay novedades ni anomalías', async () => {
+    const { sender, sent } = fakeSender();
+    const summary = await runFullSync(buildDeps({}, sender), now);
+    expect(summary.assign.assigned).toEqual([]);
+    expect(sent).toEqual([]);
+  });
+
+  it('un fallo de la auto-asignación no rompe el sync de goles', async () => {
+    const { sender } = fakeSender();
+    const deps = buildDeps(
+      {
+        assignRepo: {
+          async getKnockoutLlaves() { throw new Error('boom'); },
+          async getKnownTeamCodes() { return new Set(); },
+          async assignTeams() {},
+        },
+      },
+      sender,
+    );
+    const summary = await runFullSync(deps, now);
+    expect(summary.sync.remoteFinished).toBe(0); // el sync corrió igual
+    expect(summary.assign.anomalies.some((a) => a.includes('boom'))).toBe(true);
+  });
+
+  it('un fallo de Resend no rompe el sync', async () => {
+    const failing: EmailSender = { async send() { throw new Error('resend down'); } };
+    const raw: ProviderRawMatch[] = [
+      {
+        utcDate: '2026-06-28T18:30:00Z',
+        status: 'TIMED',
+        stage: 'LAST_32',
+        homeTeam: { tla: 'ESP' },
+        awayTeam: { tla: 'URU' },
+        score: { winner: null, duration: 'REGULAR', fullTime: { home: null, away: null } },
+      },
+    ];
+    const deps = buildDeps(
+      {
+        provider: { async fetchAll() { return raw; }, async fetchFinished() { return []; } },
+        assignRepo: {
+          async getKnockoutLlaves() {
+            return [{ id: 73, stage: 'R32', tag: null, homeCode: null, awayCode: null, kickoffUtc: new Date('2026-06-28T17:00:00Z') }];
+          },
+          async getKnownTeamCodes() { return new Set(['ESP', 'URU']); },
+          async assignTeams() {},
+        },
+      },
+      failing,
+    );
+    const summary = await runFullSync(deps, now); // no debe lanzar
+    expect(summary.assign.assigned).toHaveLength(1);
   });
 });

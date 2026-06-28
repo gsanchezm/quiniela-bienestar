@@ -141,4 +141,26 @@ describe('planKnockoutAssignments', () => {
     ]);
     expect(plan.anomalies.some((a) => a.includes('ZZZ'))).toBe(true);
   });
+
+  it('anomalía si el proveedor envía el mismo cruce dos veces: 1 assign y 1 anomalía "duplicado"', () => {
+    // mismo par (ESP vs URU) dos veces en la misma ronda; dos casilleros vacíos
+    const fixtures = [
+      fx('ESP', 'URU', '2026-06-28T18:30:00Z'),
+      fx('ESP', 'URU', '2026-06-28T18:30:00Z'),
+    ];
+    const llaves = [tbd(73, 'R32', '2026-06-28T17:00:00Z'), tbd(74, 'R32', '2026-06-28T20:00:00Z')];
+    const plan = planKnockoutAssignments(fixtures, llaves, known, now);
+    expect(plan.rows.filter((r) => r.status === 'assign')).toHaveLength(1);
+    expect(plan.anomalies).toHaveLength(1);
+    expect(plan.anomalies[0]).toContain('duplicado');
+  });
+
+  it('anomalía contiene ambos códigos cuando los dos TLA son desconocidos', () => {
+    const fixtures = [fx('XXX', 'ZZZ', '2026-06-28T18:30:00Z')];
+    const plan = planKnockoutAssignments(fixtures, [tbd(73, 'R32', '2026-06-28T17:00:00Z')], known, now);
+    expect(plan.rows).toEqual([]);
+    expect(plan.anomalies).toHaveLength(1);
+    expect(plan.anomalies[0]).toContain('XXX');
+    expect(plan.anomalies[0]).toContain('ZZZ');
+  });
 });

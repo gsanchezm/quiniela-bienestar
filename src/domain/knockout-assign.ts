@@ -125,15 +125,16 @@ export function planKnockoutAssignments(
       const home = f.homeTeam.tla!;
       const away = f.awayTeam.tla!;
 
-      if (!knownCodes.has(home) || !knownCodes.has(away)) {
-        const bad = !knownCodes.has(home) ? home : away;
-        anomalies.push(`${stage}: código desconocido "${bad}" (${f.homeTeam.name ?? '?'} vs ${f.awayTeam.name ?? '?'}).`);
+      const unknown = [home, away].filter((c) => !knownCodes.has(c));
+      if (unknown.length > 0) {
+        anomalies.push(`${stage}: código(s) desconocido(s) ${unknown.map((c) => `"${c}"`).join(', ')} (${f.homeTeam.name ?? '?'} vs ${f.awayTeam.name ?? '?'}).`);
         continue;
       }
 
       if (existingPairs.has(pairKey(home, away))) {
         const l = stageLlaves.find((x) => x.homeCode === home && x.awayCode === away);
         if (l) rows.push({ matchId: l.id, homeCode: home, awayCode: away, kickoffUtc: new Date(f.utcDate), stage, status: 'unchanged' });
+        else anomalies.push(`${stage}: cruce duplicado en los datos del proveedor (${home} vs ${away}).`);
         continue;
       }
 

@@ -49,7 +49,7 @@ async function getFixtures(): Promise<ProviderFixture[]> {
     cache: 'no-store',
   });
   if (!res.ok) throw new Error(`football-data.org respondió ${res.status}`);
-  const data = (await res.json()) as { matches?: Array<ProviderFixture & { stage: string }> };
+  const data = (await res.json()) as { matches?: Array<ProviderFixture> };
   const all = data.matches ?? [];
   console.log('Fases reportadas por football-data:', stageHistogram(all));
   return all.filter((m) => mapFdStage(m.stage) !== null && m.homeTeam?.tla && m.awayTeam?.tla);

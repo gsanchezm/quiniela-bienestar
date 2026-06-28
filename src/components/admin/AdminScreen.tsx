@@ -11,7 +11,7 @@ import { Flag } from '@/components/Flag';
 import { StageBar } from '@/components/matches/StageBar';
 import type { StageId } from '@/data/worldcup2026';
 import type { MatchView, TeamView } from '@/server/queries';
-import type { SyncSummary } from '@/server/services/sync';
+import type { FullSyncSummary } from '@/server/services/sync';
 
 const clean = (v: string) => v.replace(/[^0-9]/g, '').slice(0, 2);
 
@@ -173,7 +173,7 @@ export function AdminScreen({
 }) {
   const [stage, setStage] = useState<StageId>(initialStage);
   const [pending, startTransition] = useTransition();
-  const [summary, setSummary] = useState<SyncSummary | null>(null);
+  const [summary, setSummary] = useState<FullSyncSummary | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const list = matches.filter((m) => m.stage === stage);
 
@@ -204,16 +204,16 @@ export function AdminScreen({
           <span className="sync-summary">Configura FOOTBALL_DATA_TOKEN para habilitar el sync automático.</span>
         ) : null}
         {summary ? (
-          summary.remoteFinished === 0 ? (
+          summary.sync.remoteFinished === 0 && summary.assign.assigned.length === 0 ? (
             <span className="sync-summary">
-              ⏳ football-data.org aún no reporta partidos finalizados — sus marcadores tardan unos
-              minutos tras el silbatazo final. La sincronización automática corre cada 15 min; también
-              puedes capturar a mano.
+              ⏳ Nada nuevo: football-data aún no reporta resultados ni cruces. La sincronización corre
+              cada 15 min; también puedes capturar a mano.
             </span>
           ) : (
             <span className="sync-summary">
-              ✓ {summary.updated} actualizados · {summary.unchanged} sin cambios · {summary.skippedManual}{' '}
-              respetados (manual) · {summary.unmatched} sin emparejar
+              ✓ {summary.sync.updated} marcadores · {summary.sync.skippedManual} respetados ·{' '}
+              {summary.assign.assigned.length} llaves asignadas
+              {summary.assign.anomalies.length ? ` · ⚠️ ${summary.assign.anomalies.length} anomalías` : ''}
             </span>
           )
         ) : null}

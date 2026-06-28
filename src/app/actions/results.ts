@@ -11,12 +11,20 @@ import {
   removeResult,
   saveResult,
 } from '@/server/services/results';
-import { getResultsProvider, prismaSyncRepo, runSync, type SyncSummary } from '@/server/services/sync';
+import {
+  getResultsProvider,
+  prismaSyncRepo,
+  prismaKnockoutAssignRepo,
+  runFullSync,
+  type FullSyncSummary,
+} from '@/server/services/sync';
+import { env } from '@/server/env';
+import { getEmailSender } from '@/server/email/sender';
 
 export interface ResultActionResult {
   ok?: boolean;
   error?: string;
-  sync?: SyncSummary;
+  sync?: FullSyncSummary;
 }
 
 class Forbidden extends Error {}
@@ -75,7 +83,14 @@ export async function syncNowAction(): Promise<ResultActionResult> {
     if (!provider) {
       return { error: 'Configura FOOTBALL_DATA_TOKEN para sincronizar; mientras, captura manual.' };
     }
-    const summary = await runSync(prismaSyncRepo(db), await provider.fetchFinished());
+    const summary = await runFullSync({
+      provider,
+      syncRepo: prismaSyncRepo(db),
+      assignRepo: prismaKnockoutAssignRepo(db),
+      sender: getEmailSender(),
+      adminEmails: env.adminEmails,
+      appUrl: env.appUrl,
+    });
     refreshAll();
     return { ok: true, sync: summary };
   } catch (e) {

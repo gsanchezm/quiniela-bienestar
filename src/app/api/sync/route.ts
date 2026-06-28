@@ -5,7 +5,13 @@ import { db } from '@/server/db';
 import { safeEqual } from '@/server/crypto';
 import { getSessionUser } from '@/server/auth/session';
 import { isAdmin } from '@/server/admin';
-import { getResultsProvider, prismaSyncRepo, runSync } from '@/server/services/sync';
+import {
+  getResultsProvider,
+  prismaSyncRepo,
+  prismaKnockoutAssignRepo,
+  runFullSync,
+} from '@/server/services/sync';
+import { getEmailSender } from '@/server/email/sender';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,7 +33,14 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   try {
-    const summary = await runSync(prismaSyncRepo(db), await provider.fetchFinished());
+    const summary = await runFullSync({
+      provider,
+      syncRepo: prismaSyncRepo(db),
+      assignRepo: prismaKnockoutAssignRepo(db),
+      sender: getEmailSender(),
+      adminEmails: env.adminEmails,
+      appUrl: env.appUrl,
+    });
     revalidatePath('/partidos');
     revalidatePath('/tabla');
     revalidatePath('/resultados');

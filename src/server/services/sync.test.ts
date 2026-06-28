@@ -191,7 +191,10 @@ describe('runKnockoutAutoAssign', () => {
       { id: 73, home: 'ESP', away: 'URU', kickoff: '2026-06-28T18:30:00.000Z' },
       { id: 74, home: 'MEX', away: 'BRA', kickoff: '2026-06-28T20:00:00.000Z' },
     ]);
-    expect(result.assigned).toHaveLength(2);
+    expect(result.assigned).toEqual([
+      { matchId: 73, stage: 'R32', homeCode: 'ESP', awayCode: 'URU' },
+      { matchId: 74, stage: 'R32', homeCode: 'MEX', awayCode: 'BRA' },
+    ]);
     expect(result.anomalies).toEqual([]);
   });
 
@@ -205,7 +208,7 @@ describe('runKnockoutAutoAssign', () => {
 });
 
 function fakeSender() {
-  const sent: Array<{ to: string; subject: string }> = [];
+  const sent: Array<{ to: string | string[]; subject: string }> = [];
   const sender: EmailSender = {
     async send(to, subject) {
       sent.push({ to, subject });
@@ -216,7 +219,7 @@ function fakeSender() {
 
 function buildDeps(over: Partial<FullSyncDeps>, sender: EmailSender): FullSyncDeps {
   return {
-    provider: { async fetchAll() { return []; }, async fetchFinished() { return []; } },
+    provider: { async fetchAll() { return []; } },
     syncRepo: { async getSyncableMatches() { return []; }, async setResult() {} },
     assignRepo: {
       async getKnockoutLlaves() { return []; },
@@ -248,7 +251,7 @@ describe('runFullSync', () => {
     const writes: number[] = [];
     const deps = buildDeps(
       {
-        provider: { async fetchAll() { return raw; }, async fetchFinished() { return []; } },
+        provider: { async fetchAll() { return raw; } },
         assignRepo: {
           async getKnockoutLlaves() {
             return [{ id: 73, stage: 'R32', tag: null, homeCode: null, awayCode: null, kickoffUtc: new Date('2026-06-28T17:00:00Z') }];
@@ -263,7 +266,39 @@ describe('runFullSync', () => {
     expect(writes).toEqual([73]);
     expect(summary.assign.assigned).toHaveLength(1);
     expect(sent).toHaveLength(1);
-    expect(sent[0].to).toBe('admin@demo.mx');
+    expect(sent[0].to).toEqual(['admin@demo.mx']);
+    expect(sent[0].subject).toBeTruthy();
+  });
+
+  it('no manda correo si no hay admins configurados, aunque haya asignaciones', async () => {
+    const { sender, sent } = fakeSender();
+    const raw: ProviderRawMatch[] = [
+      {
+        utcDate: '2026-06-28T18:30:00Z',
+        status: 'TIMED',
+        stage: 'LAST_32',
+        homeTeam: { tla: 'ESP' },
+        awayTeam: { tla: 'URU' },
+        score: { winner: null, duration: 'REGULAR', fullTime: { home: null, away: null } },
+      },
+    ];
+    const deps = buildDeps(
+      {
+        adminEmails: [],
+        provider: { async fetchAll() { return raw; } },
+        assignRepo: {
+          async getKnockoutLlaves() {
+            return [{ id: 73, stage: 'R32', tag: null, homeCode: null, awayCode: null, kickoffUtc: new Date('2026-06-28T17:00:00Z') }];
+          },
+          async getKnownTeamCodes() { return new Set(['ESP', 'URU']); },
+          async assignTeams() {},
+        },
+      },
+      sender,
+    );
+    const summary = await runFullSync(deps, now);
+    expect(summary.assign.assigned).toHaveLength(1);
+    expect(sent).toEqual([]);
   });
 
   it('no manda correo cuando no hay novedades ni anomalías', async () => {
@@ -304,7 +339,7 @@ describe('runFullSync', () => {
     ];
     const deps = buildDeps(
       {
-        provider: { async fetchAll() { return raw; }, async fetchFinished() { return []; } },
+        provider: { async fetchAll() { return raw; } },
         assignRepo: {
           async getKnockoutLlaves() {
             return [{ id: 73, stage: 'R32', tag: null, homeCode: null, awayCode: null, kickoffUtc: new Date('2026-06-28T17:00:00Z') }];

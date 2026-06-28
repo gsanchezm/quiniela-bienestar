@@ -16,7 +16,6 @@ export interface ProviderMatch {
 
 export interface ResultsProvider {
   fetchAll(): Promise<ProviderRawMatch[]>;
-  fetchFinished(): Promise<ProviderMatch[]>;
 }
 
 export interface SyncMatch {
@@ -148,9 +147,6 @@ export class FootballDataProvider implements ResultsProvider {
     return data.matches ?? [];
   }
 
-  async fetchFinished(): Promise<ProviderMatch[]> {
-    return selectFinished(await this.fetchAll());
-  }
 }
 
 export function prismaSyncRepo(db: PrismaClient): SyncRepo {
@@ -263,7 +259,7 @@ export async function runFullSync(deps: FullSyncDeps, now: Date = new Date()): P
   if ((assign.assigned.length > 0 || assign.anomalies.length > 0) && deps.adminEmails.length > 0) {
     try {
       const { subject, html } = knockoutAssignedEmail(assign.assigned, assign.anomalies, deps.appUrl);
-      await deps.sender.send(deps.adminEmails.join(', '), subject, html);
+      await deps.sender.send(deps.adminEmails, subject, html);
     } catch (e) {
       console.error('No se pudo enviar el aviso de auto-asignación:', e);
     }

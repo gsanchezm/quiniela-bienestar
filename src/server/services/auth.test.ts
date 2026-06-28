@@ -14,7 +14,7 @@ import {
 } from './auth';
 
 interface Sent {
-  to: string;
+  to: string | string[];
   subject: string;
   html: string;
 }

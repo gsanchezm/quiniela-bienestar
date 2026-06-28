@@ -1,6 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { env } from '@/server/env';
-import { mapFdStage, type ProviderFixture } from '@/domain/knockout-assign';
+import { mapFdStage, planKnockoutAssignments, type Llave, type ProviderFixture } from '@/domain/knockout-assign';
 
 // Partido remoto ya normalizado por el proveedor (football-data.org v4).
 export interface ProviderMatch {
@@ -173,6 +173,56 @@ export function prismaSyncRepo(db: PrismaClient): SyncRepo {
         where: { id: matchId },
         data: { homeGoals: hg, awayGoals: ag, penWinner },
       });
+    },
+  };
+}
+
+// --- Auto-asignación de equipos de eliminatoria ---------------------------
+
+export interface KnockoutAssignRepo {
+  getKnockoutLlaves(): Promise<Llave[]>;
+  getKnownTeamCodes(): Promise<Set<string>>;
+  assignTeams(id: number, home: string, away: string, kickoffUtc: Date): Promise<void>;
+}
+
+export interface KnockoutAssignResult {
+  assigned: Array<{ matchId: number; stage: string; homeCode: string; awayCode: string }>;
+  anomalies: string[];
+}
+
+// Conservador: solo escribe casilleros vacíos (status 'assign'). Idempotente.
+export async function runKnockoutAutoAssign(
+  repo: KnockoutAssignRepo,
+  fixtures: ProviderFixture[],
+  now: Date,
+): Promise<KnockoutAssignResult> {
+  const [llaves, knownCodes] = await Promise.all([repo.getKnockoutLlaves(), repo.getKnownTeamCodes()]);
+  const plan = planKnockoutAssignments(fixtures, llaves, knownCodes, now);
+
+  const assigned: KnockoutAssignResult['assigned'] = [];
+  for (const r of plan.rows) {
+    if (r.status !== 'assign') continue;
+    await repo.assignTeams(r.matchId, r.homeCode, r.awayCode, r.kickoffUtc);
+    assigned.push({ matchId: r.matchId, stage: r.stage, homeCode: r.homeCode, awayCode: r.awayCode });
+  }
+  return { assigned, anomalies: plan.anomalies };
+}
+
+export function prismaKnockoutAssignRepo(db: PrismaClient): KnockoutAssignRepo {
+  return {
+    async getKnockoutLlaves() {
+      const rows = await db.match.findMany({
+        where: { isKnockout: true },
+        select: { id: true, stage: true, tag: true, homeCode: true, awayCode: true, kickoffUtc: true },
+      });
+      return rows.map((r) => ({ ...r, stage: r.stage as string }));
+    },
+    async getKnownTeamCodes() {
+      const teams = await db.team.findMany({ select: { code: true } });
+      return new Set(teams.map((t) => t.code));
+    },
+    async assignTeams(id, home, away, kickoffUtc) {
+      await db.match.update({ where: { id }, data: { homeCode: home, awayCode: away, kickoffUtc } });
     },
   };
 }

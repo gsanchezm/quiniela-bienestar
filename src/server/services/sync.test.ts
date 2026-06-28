@@ -3,11 +3,14 @@ import {
   runSync,
   selectFinished,
   selectKnockoutFixtures,
+  runKnockoutAutoAssign,
   type ProviderMatch,
   type ProviderRawMatch,
   type SyncRepo,
   type SyncMatch,
+  type KnockoutAssignRepo,
 } from './sync';
+import type { Llave, ProviderFixture } from '@/domain/knockout-assign';
 
 const rawMatch = (over: Partial<ProviderRawMatch> = {}): ProviderRawMatch => ({
   utcDate: '2026-06-11T19:00:00Z',
@@ -133,5 +136,67 @@ describe('sincronización con football-data.org', () => {
       remoto({ utcDate: '2026-07-19T19:00:00Z', fullTime: { home: 1, away: 0 } }),
     ]);
     expect(saved).toEqual([{ id: 104, hg: 1, ag: 0, pen: null }]);
+  });
+});
+
+function fakeAssignRepo(llaves: Llave[], known: string[]) {
+  const writes: Array<{ id: number; home: string; away: string; kickoff: string }> = [];
+  const repo: KnockoutAssignRepo = {
+    async getKnockoutLlaves() {
+      return llaves;
+    },
+    async getKnownTeamCodes() {
+      return new Set(known);
+    },
+    async assignTeams(id, home, away, kickoffUtc) {
+      writes.push({ id, home, away, kickoff: kickoffUtc.toISOString() });
+    },
+  };
+  return { repo, writes };
+}
+
+const tbdLlave = (id: number, stage: string, kickoffUtc: string, tag: string | null = null): Llave => ({
+  id,
+  stage,
+  tag,
+  homeCode: null,
+  awayCode: null,
+  kickoffUtc: new Date(kickoffUtc),
+});
+
+const fixture = (home: string, away: string, utcDate: string, stage = 'LAST_32'): ProviderFixture => ({
+  utcDate,
+  stage,
+  homeTeam: { tla: home, name: home },
+  awayTeam: { tla: away, name: away },
+});
+
+describe('runKnockoutAutoAssign', () => {
+  const now = new Date('2026-06-28T10:00:00Z');
+
+  it('escribe solo las llaves vacías y reporta lo asignado', async () => {
+    const { repo, writes } = fakeAssignRepo(
+      [tbdLlave(73, 'R32', '2026-06-28T17:00:00Z'), tbdLlave(74, 'R32', '2026-06-28T20:00:00Z')],
+      ['ESP', 'URU', 'MEX', 'BRA'],
+    );
+    const result = await runKnockoutAutoAssign(
+      repo,
+      [fixture('ESP', 'URU', '2026-06-28T18:30:00Z'), fixture('MEX', 'BRA', '2026-06-28T20:00:00Z')],
+      now,
+    );
+    expect(writes).toEqual([
+      { id: 73, home: 'ESP', away: 'URU', kickoff: '2026-06-28T18:30:00.000Z' },
+      { id: 74, home: 'MEX', away: 'BRA', kickoff: '2026-06-28T20:00:00.000Z' },
+    ]);
+    expect(result.assigned).toHaveLength(2);
+    expect(result.anomalies).toEqual([]);
+  });
+
+  it('no escribe nada y propaga anomalías cuando hay datos inválidos', async () => {
+    const { repo, writes } = fakeAssignRepo([tbdLlave(73, 'R32', '2026-06-28T17:00:00Z')], ['ESP']);
+    const result = await runKnockoutAutoAssign(repo, [fixture('ESP', 'ZZZ', '2026-06-28T18:30:00Z')], now);
+    expect(writes).toEqual([]);
+    expect(result.assigned).toEqual([]);
+    expect(result.anomalies.some((a) => a.includes('ZZZ'))).toBe(true);
   });
 });

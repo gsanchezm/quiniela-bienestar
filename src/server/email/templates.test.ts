@@ -36,4 +36,26 @@ describe('correo de auto-asignación de eliminatoria', () => {
     expect(subject.toLowerCase()).toContain('revisa');
     expect(html).toContain('ZZZ');
   });
+
+  it('muestra asignaciones y anomalías juntas', () => {
+    const { subject, html } = knockoutAssignedEmail(
+      [{ stage: 'QF', homeCode: 'ARG', awayCode: 'BRA' }],
+      ['R16: código desconocido "ZZZ".'],
+      'https://quiniela.example',
+    );
+    expect(subject).toContain('1');
+    expect(html).toContain('ARG');
+    expect(html).toContain('BRA');
+    expect(html).toContain('Cuartos');
+    expect(html).toContain('ZZZ');
+  });
+
+  it('usa el código de fase crudo cuando no hay etiqueta conocida', () => {
+    const { html } = knockoutAssignedEmail(
+      [{ stage: 'UNKNOWN', homeCode: 'ARG', awayCode: 'BRA' }],
+      [],
+      'https://quiniela.example',
+    );
+    expect(html).toContain('UNKNOWN');
+  });
 });

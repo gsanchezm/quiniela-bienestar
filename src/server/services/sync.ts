@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { env } from '@/server/env';
+import { mapFdStage, type ProviderFixture } from '@/domain/knockout-assign';
 
 // Partido remoto ya normalizado por el proveedor (football-data.org v4).
 export interface ProviderMatch {
@@ -12,6 +13,7 @@ export interface ProviderMatch {
 }
 
 export interface ResultsProvider {
+  fetchAll(): Promise<ProviderRawMatch[]>;
   fetchFinished(): Promise<ProviderMatch[]>;
 }
 
@@ -91,11 +93,13 @@ export async function runSync(repo: SyncRepo, remote: ProviderMatch[]): Promise<
 
 // --- Proveedor real: football-data.org v4 ---------------------------------
 
-interface FdMatch {
+// Partido crudo del proveedor (lo que devuelve /competitions/WC/matches).
+export interface ProviderRawMatch {
   utcDate: string;
   status: string;
-  homeTeam: { tla?: string | null };
-  awayTeam: { tla?: string | null };
+  stage: string;
+  homeTeam: { tla?: string | null; name?: string | null };
+  awayTeam: { tla?: string | null; name?: string | null };
   score: {
     winner: 'HOME_TEAM' | 'AWAY_TEAM' | 'DRAW' | null;
     duration: 'REGULAR' | 'EXTRA_TIME' | 'PENALTY_SHOOTOUT';
@@ -103,10 +107,31 @@ interface FdMatch {
   };
 }
 
+/** Finalizados con marcador → forma que consume runSync (goles). */
+export function selectFinished(all: ProviderRawMatch[]): ProviderMatch[] {
+  return all
+    .filter((m) => m.status === 'FINISHED' && m.score.fullTime.home !== null)
+    .map((m) => ({
+      homeTla: m.homeTeam.tla ?? null,
+      awayTla: m.awayTeam.tla ?? null,
+      utcDate: m.utcDate,
+      fullTime: { home: m.score.fullTime.home!, away: m.score.fullTime.away! },
+      duration: m.score.duration,
+      winner: m.score.winner,
+    }));
+}
+
+/** Cruces de fase KO con ambos equipos definidos → forma que consume la asignación. */
+export function selectKnockoutFixtures(all: ProviderRawMatch[]): ProviderFixture[] {
+  return all
+    .filter((m) => mapFdStage(m.stage) !== null && Boolean(m.homeTeam?.tla) && Boolean(m.awayTeam?.tla))
+    .map((m) => ({ utcDate: m.utcDate, stage: m.stage, homeTeam: m.homeTeam, awayTeam: m.awayTeam }));
+}
+
 export class FootballDataProvider implements ResultsProvider {
   constructor(private readonly token: string) {}
 
-  async fetchFinished(): Promise<ProviderMatch[]> {
+  async fetchAll(): Promise<ProviderRawMatch[]> {
     const res = await fetch('https://api.football-data.org/v4/competitions/WC/matches', {
       headers: { 'X-Auth-Token': this.token },
       cache: 'no-store',
@@ -117,17 +142,12 @@ export class FootballDataProvider implements ResultsProvider {
       );
     }
     if (!res.ok) throw new Error(`football-data.org respondió ${res.status}`);
-    const data = (await res.json()) as { matches?: FdMatch[] };
-    return (data.matches ?? [])
-      .filter((m) => m.status === 'FINISHED' && m.score.fullTime.home !== null)
-      .map((m) => ({
-        homeTla: m.homeTeam.tla ?? null,
-        awayTla: m.awayTeam.tla ?? null,
-        utcDate: m.utcDate,
-        fullTime: { home: m.score.fullTime.home!, away: m.score.fullTime.away! },
-        duration: m.score.duration,
-        winner: m.score.winner,
-      }));
+    const data = (await res.json()) as { matches?: ProviderRawMatch[] };
+    return data.matches ?? [];
+  }
+
+  async fetchFinished(): Promise<ProviderMatch[]> {
+    return selectFinished(await this.fetchAll());
   }
 }
 

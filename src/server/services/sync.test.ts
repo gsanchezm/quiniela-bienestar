@@ -1,5 +1,46 @@
 import { describe, it, expect } from 'vitest';
-import { runSync, type ProviderMatch, type SyncRepo, type SyncMatch } from './sync';
+import {
+  runSync,
+  selectFinished,
+  selectKnockoutFixtures,
+  type ProviderMatch,
+  type ProviderRawMatch,
+  type SyncRepo,
+  type SyncMatch,
+} from './sync';
+
+const rawMatch = (over: Partial<ProviderRawMatch> = {}): ProviderRawMatch => ({
+  utcDate: '2026-06-11T19:00:00Z',
+  status: 'FINISHED',
+  stage: 'GROUP_STAGE',
+  homeTeam: { tla: 'MEX', name: 'México' },
+  awayTeam: { tla: 'RSA', name: 'Sudáfrica' },
+  score: { winner: 'HOME_TEAM', duration: 'REGULAR', fullTime: { home: 2, away: 0 } },
+  ...over,
+});
+
+describe('selectores del proveedor', () => {
+  it('selectFinished toma solo FINISHED con marcador y lo normaliza', () => {
+    const all = [
+      rawMatch(),
+      rawMatch({ status: 'TIMED', score: { winner: null, duration: 'REGULAR', fullTime: { home: null, away: null } } }),
+    ];
+    const finished = selectFinished(all);
+    expect(finished).toHaveLength(1);
+    expect(finished[0]).toMatchObject({ homeTla: 'MEX', awayTla: 'RSA', fullTime: { home: 2, away: 0 } });
+  });
+
+  it('selectKnockoutFixtures toma fases KO con ambos equipos definidos', () => {
+    const all = [
+      rawMatch({ stage: 'LAST_32', homeTeam: { tla: 'ESP' }, awayTeam: { tla: 'URU' } }),
+      rawMatch({ stage: 'GROUP_STAGE' }), // no KO
+      rawMatch({ stage: 'LAST_16', homeTeam: { tla: null }, awayTeam: { tla: 'BRA' } }), // sin equipo
+    ];
+    const ko = selectKnockoutFixtures(all);
+    expect(ko).toHaveLength(1);
+    expect(ko[0]).toMatchObject({ stage: 'LAST_32', homeTeam: { tla: 'ESP' }, awayTeam: { tla: 'URU' } });
+  });
+});
 
 const partido = (over: Partial<SyncMatch> = {}): SyncMatch => ({
   id: 1,

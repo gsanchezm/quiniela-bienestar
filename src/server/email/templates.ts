@@ -67,3 +67,59 @@ export function changeEmailEmail(url: string): EmailContent {
     ),
   };
 }
+
+const STAGE_LABEL: Record<string, string> = {
+  R32: 'Dieciseisavos',
+  R16: 'Octavos',
+  QF: 'Cuartos',
+  SF: 'Semifinales',
+  FIN: 'Final',
+};
+
+export function knockoutAssignedEmail(
+  assigned: Array<{ stage: string; homeCode: string; awayCode: string }>,
+  anomalies: string[],
+  appUrl: string,
+): EmailContent {
+  const rows = assigned
+    .map(
+      (a) =>
+        `<tr><td style="color:#6f6b64;font-size:12px;letter-spacing:1px;padding:6px 12px 6px 0;">${STAGE_LABEL[a.stage] ?? a.stage}</td>` +
+        `<td style="color:#f2f1ee;font-size:15px;font-weight:bold;padding:6px 0;">${a.homeCode} vs ${a.awayCode}</td></tr>`,
+    )
+    .join('');
+  const assignedBlock = assigned.length
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">${rows}</table>`
+    : `<p style="color:#a39f98;font-size:15px;">No se asignaron cruces nuevos.</p>`;
+  const anomaliesBlock = anomalies.length
+    ? `<p style="color:#e0a106;font-size:14px;font-weight:bold;padding-top:16px;">⚠️ Revisa en Admin:</p>` +
+      `<ul style="color:#a39f98;font-size:13px;text-align:left;line-height:1.6;">${anomalies.map((x) => `<li>${x}</li>`).join('')}</ul>`
+    : '';
+  const subject = assigned.length
+    ? `⚽ ${assigned.length} cruce(s) de eliminatoria asignados`
+    : '⚠️ Revisa la auto-asignación de eliminatoria';
+
+  const html = `<!doctype html>
+<html lang="es">
+  <body style="margin:0;background:#121212;padding:32px 16px;font-family:Arial,Helvetica,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+      <table role="presentation" width="480" cellpadding="0" cellspacing="0"
+             style="background:#1d1d1c;border:1px solid #2c2c2a;border-radius:8px;padding:32px;">
+        <tr><td align="center" style="padding-bottom:8px;">
+          <span style="color:#4db53c;font-size:13px;letter-spacing:3px;font-weight:bold;">QUINIELA DEL BIENESTAR</span>
+        </td></tr>
+        <tr><td align="center" style="color:#f2f1ee;font-size:22px;font-weight:bold;padding:8px 0;">Eliminatoria actualizada</td></tr>
+        <tr><td align="center" style="padding:8px 0 16px;">${assignedBlock}${anomaliesBlock}</td></tr>
+        <tr><td align="center">
+          <a href="${appUrl}/partidos" style="background:#4db53c;color:#ffffff;text-decoration:none;font-weight:bold;
+             padding:14px 28px;border-radius:4px;display:inline-block;letter-spacing:1px;">VER EL CUADRO</a>
+        </td></tr>
+        <tr><td align="center" style="color:#6f6b64;font-size:12px;line-height:1.6;padding-top:24px;">
+          Asignación automática desde football-data.org · Copa Mundial 2026
+        </td></tr>
+      </table>
+    </td></tr></table>
+  </body>
+</html>`;
+  return { subject, html };
+}

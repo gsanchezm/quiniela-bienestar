@@ -5,12 +5,15 @@ import {
   selectKnockoutFixtures,
   runKnockoutAutoAssign,
   runFullSync,
+  runKnockoutAdvance,
   type ProviderMatch,
   type ProviderRawMatch,
   type SyncRepo,
   type SyncMatch,
   type KnockoutAssignRepo,
   type FullSyncDeps,
+  type KnockoutAdvanceRepo,
+  type AdvanceDbMatch,
 } from './sync';
 import type { Llave, ProviderFixture } from '@/domain/knockout-assign';
 import type { EmailSender } from '@/server/email/sender';
@@ -352,5 +355,63 @@ describe('runFullSync', () => {
     );
     const summary = await runFullSync(deps, now); // no debe lanzar
     expect(summary.assign.assigned).toHaveLength(1);
+  });
+});
+
+function fakeAdvanceRepo(rows: AdvanceDbMatch[]) {
+  const writes: Array<{ matchId: number; slot: 'H' | 'A'; teamCode: string }> = [];
+  const repo: KnockoutAdvanceRepo = {
+    async getKnockoutMatches() { return rows; },
+    async setSlotTeam(matchId, slot, teamCode) {
+      writes.push({ matchId, slot, teamCode });
+      const t = rows.find((r) => r.id === matchId)!;
+      if (slot === 'H') t.homeCode = teamCode; else t.awayCode = teamCode;
+    },
+  };
+  return { repo, writes };
+}
+
+const R32 = (id: number, h: string, a: string, hg: number, ag: number, pen: 'H' | 'A' | null = null): AdvanceDbMatch =>
+  ({ id, stage: 'R32', isKnockout: true, homeCode: h, awayCode: a, homeGoals: hg, awayGoals: ag, penWinner: pen, hasPicks: false });
+const EMPTY = (id: number, stage: string): AdvanceDbMatch =>
+  ({ id, stage, isKnockout: true, homeCode: null, awayCode: null, homeGoals: null, awayGoals: null, penWinner: null, hasPicks: false });
+
+describe('runKnockoutAdvance', () => {
+  it('llena octavos 90 con Canadá y Marruecos', async () => {
+    const { repo, writes } = fakeAdvanceRepo([
+      R32(701, 'RSA', 'CAN', 0, 1), R32(704, 'NED', 'MAR', 1, 1, 'A'), EMPTY(90, 'R16'),
+    ]);
+    const res = await runKnockoutAdvance(repo);
+    expect(res.anomalies).toEqual([]);
+    expect(writes).toContainEqual({ matchId: 90, slot: 'H', teamCode: 'CAN' });
+    expect(writes).toContainEqual({ matchId: 90, slot: 'A', teamCode: 'MAR' });
+  });
+
+  it('es idempotente: no re-escribe un casillero ya correcto', async () => {
+    const { repo, writes } = fakeAdvanceRepo([
+      R32(701, 'RSA', 'CAN', 0, 1),
+      { ...EMPTY(90, 'R16'), homeCode: 'CAN' }, // ya tiene CAN en H
+    ]);
+    await runKnockoutAdvance(repo);
+    expect(writes).toEqual([]);
+  });
+
+  it('no pisa un casillero con OTRO equipo si ya tiene picks → anomalía', async () => {
+    const { repo, writes } = fakeAdvanceRepo([
+      R32(701, 'RSA', 'CAN', 0, 1),
+      { ...EMPTY(90, 'R16'), homeCode: 'BRA', hasPicks: true },
+    ]);
+    const res = await runKnockoutAdvance(repo);
+    expect(writes).toEqual([]);
+    expect(res.anomalies).toHaveLength(1);
+  });
+
+  it('sobrescribe casillero stale (otro equipo, SIN picks ni resultado)', async () => {
+    const { repo, writes } = fakeAdvanceRepo([
+      R32(701, 'RSA', 'CAN', 0, 1),
+      { ...EMPTY(90, 'R16'), homeCode: 'BRA' }, // stale del proveedor, sin picks
+    ]);
+    await runKnockoutAdvance(repo);
+    expect(writes).toContainEqual({ matchId: 90, slot: 'H', teamCode: 'CAN' });
   });
 });

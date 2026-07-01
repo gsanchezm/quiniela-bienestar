@@ -3,6 +3,7 @@ import { env } from '@/server/env';
 import { mapFdStage, planKnockoutAssignments, type Llave, type ProviderFixture } from '@/domain/knockout-assign';
 import type { EmailSender } from '@/server/email/sender';
 import { knockoutAssignedEmail } from '@/server/email/templates';
+import { computeAdvancement, type AdvanceInput } from '@/domain/bracket-topology';
 
 // Partido remoto ya normalizado por el proveedor (football-data.org v4).
 export interface ProviderMatch {
@@ -271,4 +272,72 @@ export async function runFullSync(deps: FullSyncDeps, now: Date = new Date()): P
 export function getResultsProvider(): ResultsProvider | null {
   const token = env.footballDataToken;
   return token ? new FootballDataProvider(token) : null;
+}
+
+// --- Auto-avance de eliminatoria (R16+) ------------------------------------
+
+export interface AdvanceDbMatch {
+  id: number; stage: string; isKnockout: boolean;
+  homeCode: string | null; awayCode: string | null;
+  homeGoals: number | null; awayGoals: number | null; penWinner: 'H' | 'A' | null;
+  hasPicks: boolean;
+}
+export interface KnockoutAdvanceRepo {
+  getKnockoutMatches(): Promise<AdvanceDbMatch[]>;
+  setSlotTeam(matchId: number, slot: 'H' | 'A', teamCode: string): Promise<void>;
+}
+export interface KnockoutAdvanceResult {
+  advanced: Array<{ matchId: number; slot: 'H' | 'A'; teamCode: string }>;
+  anomalies: string[];
+}
+
+// Conservador: llena/actualiza casilleros R16+ derivados; nunca pisa uno con
+// picks/resultado y equipo distinto (eso es anomalía). Idempotente.
+export async function runKnockoutAdvance(repo: KnockoutAdvanceRepo): Promise<KnockoutAdvanceResult> {
+  const rows = await repo.getKnockoutMatches();
+  const inputs: AdvanceInput[] = rows.map((m) => ({
+    id: m.id, stage: m.stage, isKnockout: m.isKnockout, homeCode: m.homeCode, awayCode: m.awayCode,
+    result: m.homeGoals !== null && m.awayGoals !== null
+      ? { homeGoals: m.homeGoals, awayGoals: m.awayGoals, penWinner: m.penWinner } : null,
+  }));
+  const { writes, anomalies } = computeAdvancement(inputs);
+  const byId = new Map(rows.map((m) => [m.id, m]));
+  const advanced: KnockoutAdvanceResult['advanced'] = [];
+
+  for (const w of writes) {
+    const target = byId.get(w.matchId);
+    if (!target) { anomalies.push(`Destino ${w.matchId} no existe.`); continue; }
+    const current = w.slot === 'H' ? target.homeCode : target.awayCode;
+    if (current === w.teamCode) continue; // idempotente
+    if (current !== null) {
+      const hasResult = target.homeGoals !== null;
+      if (target.hasPicks || hasResult) {
+        anomalies.push(`m${w.matchId} lado ${w.slot}: topología dice ${w.teamCode} pero ya hay ${current} con picks/resultado — revisa Admin.`);
+        continue;
+      }
+      // stale (sembrado por proveedor sin picks) → se sobrescribe
+    }
+    await repo.setSlotTeam(w.matchId, w.slot, w.teamCode);
+    if (w.slot === 'H') target.homeCode = w.teamCode; else target.awayCode = w.teamCode;
+    advanced.push(w);
+  }
+  return { advanced, anomalies };
+}
+
+export function prismaKnockoutAdvanceRepo(db: PrismaClient): KnockoutAdvanceRepo {
+  return {
+    async getKnockoutMatches() {
+      const rows = await db.match.findMany({
+        where: { isKnockout: true },
+        select: {
+          id: true, stage: true, isKnockout: true, homeCode: true, awayCode: true,
+          homeGoals: true, awayGoals: true, penWinner: true, _count: { select: { picks: true } },
+        },
+      });
+      return rows.map(({ _count, ...r }) => ({ ...r, stage: r.stage as string, hasPicks: _count.picks > 0 }));
+    },
+    async setSlotTeam(matchId, slot, teamCode) {
+      await db.match.update({ where: { id: matchId }, data: slot === 'H' ? { homeCode: teamCode } : { awayCode: teamCode } });
+    },
+  };
 }

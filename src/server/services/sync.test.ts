@@ -15,6 +15,8 @@ import {
   type FullSyncDeps,
   type KnockoutAdvanceRepo,
   type AdvanceDbMatch,
+  type KnockoutReconcileRepo,
+  type ReconcileRow,
 } from './sync';
 import type { Llave, ProviderFixture } from '@/domain/knockout-assign';
 import type { EmailSender } from '@/server/email/sender';
@@ -230,6 +232,14 @@ function buildDeps(over: Partial<FullSyncDeps>, sender: EmailSender): FullSyncDe
       async getKnownTeamCodes() { return new Set(); },
       async assignTeams() {},
     },
+    advanceRepo: {
+      async getKnockoutMatches() { return []; },
+      async setSlotTeam() {},
+    },
+    reconcileRepo: {
+      async getKnockoutRows() { return []; },
+      async updateKickoff() {},
+    },
     sender,
     adminEmails: ['admin@demo.mx'],
     appUrl: 'https://quiniela.example',
@@ -356,6 +366,115 @@ describe('runFullSync', () => {
     );
     const summary = await runFullSync(deps, now); // no debe lanzar
     expect(summary.assign.assigned).toHaveLength(1);
+  });
+
+  it('siembra solo R32, corre el auto-avance antes que la reconciliación, y agrega ambos al summary', async () => {
+    const { sender } = fakeSender();
+    const callOrder: string[] = [];
+
+    // El proveedor publica un R32 fijado y un R16 ya con equipos: el assign
+    // debe sembrar SOLO el R32; el R16 lo llena el auto-avance, no el proveedor.
+    const raw: ProviderRawMatch[] = [
+      {
+        utcDate: '2026-06-28T18:30:00Z',
+        status: 'TIMED',
+        stage: 'LAST_32',
+        homeTeam: { tla: 'ESP' },
+        awayTeam: { tla: 'URU' },
+        score: { winner: null, duration: 'REGULAR', fullTime: { home: null, away: null } },
+      },
+      {
+        utcDate: '2026-07-04T21:00:00Z',
+        status: 'TIMED',
+        stage: 'LAST_16',
+        homeTeam: { tla: 'CAN' },
+        awayTeam: { tla: 'MAR' },
+        score: { winner: null, duration: 'REGULAR', fullTime: { home: null, away: null } },
+      },
+    ];
+
+    // Assign: hay llaves vacías R32 (73) y R16 (90). Si el assign recibiera
+    // fixtures R16 sembraría la 90; con el filtro R32 solo debe tocar la 73.
+    const assignWrites: number[] = [];
+
+    // Advance: R32 finalizados que alimentan el R16 (90) con CAN y MAR.
+    const advanceRows: AdvanceDbMatch[] = [
+      R32(701, 'RSA', 'CAN', 0, 1),
+      R32(704, 'NED', 'MAR', 1, 1, 'A'),
+      EMPTY(90, 'R16'),
+    ];
+    const advanceWrites: Array<{ matchId: number; slot: 'H' | 'A'; teamCode: string }> = [];
+    const advanceRepo: KnockoutAdvanceRepo = {
+      async getKnockoutMatches() {
+        callOrder.push('advance');
+        return advanceRows;
+      },
+      async setSlotTeam(matchId, slot, teamCode) {
+        advanceWrites.push({ matchId, slot, teamCode });
+        const t = advanceRows.find((r) => r.id === matchId)!;
+        if (slot === 'H') t.homeCode = teamCode;
+        else t.awayCode = teamCode;
+      },
+    };
+
+    // Reconcile: nuestro R16 (90) ya tiene CAN vs MAR pero con un kickoff viejo;
+    // el proveedor trae el real (21:00) → debe adoptarlo, sin anomalías.
+    const reconcileRows: ReconcileRow[] = [
+      { id: 90, stage: 'R16', homeCode: 'CAN', awayCode: 'MAR', kickoffUtc: new Date('2026-07-04T00:00:00Z') },
+    ];
+    const kickoffWrites: Array<{ matchId: number; utc: Date }> = [];
+    const reconcileRepo: KnockoutReconcileRepo = {
+      async getKnockoutRows() {
+        callOrder.push('reconcile');
+        return reconcileRows;
+      },
+      async updateKickoff(matchId, utc) {
+        kickoffWrites.push({ matchId, utc });
+      },
+    };
+
+    const deps = buildDeps(
+      {
+        provider: { async fetchAll() { return raw; } },
+        assignRepo: {
+          async getKnockoutLlaves() {
+            return [
+              { id: 73, stage: 'R32', tag: null, homeCode: null, awayCode: null, kickoffUtc: new Date('2026-06-28T17:00:00Z') },
+              { id: 90, stage: 'R16', tag: null, homeCode: null, awayCode: null, kickoffUtc: new Date('2026-07-04T00:00:00Z') },
+            ];
+          },
+          async getKnownTeamCodes() { return new Set(['ESP', 'URU', 'CAN', 'MAR']); },
+          async assignTeams(id) { assignWrites.push(id); },
+        },
+        advanceRepo,
+        reconcileRepo,
+      },
+      sender,
+    );
+
+    const summary = await runFullSync(deps, now);
+
+    // (a) El assign recibió solo R32: sembró la 73, nunca la 90.
+    expect(assignWrites).toEqual([73]);
+    expect(summary.assign.assigned).toEqual([
+      { matchId: 73, stage: 'R32', homeCode: 'ESP', awayCode: 'URU' },
+    ]);
+
+    // (b) El auto-avance corrió y su resultado quedó en summary.advance.
+    expect(advanceWrites).toContainEqual({ matchId: 90, slot: 'H', teamCode: 'CAN' });
+    expect(advanceWrites).toContainEqual({ matchId: 90, slot: 'A', teamCode: 'MAR' });
+    expect(summary.advance.advanced.length).toBeGreaterThan(0);
+
+    // (c) Advance ANTES que reconcile (si reconcile corriera primero, un cruce
+    // R16 del proveedor no cuadraría con la topología aún sin propagar).
+    expect(callOrder).toEqual(['advance', 'reconcile']);
+
+    // La reconciliación adoptó el kickoff real y quedó en summary.reconcile.
+    expect(summary.reconcile.kickoffUpdates).toEqual([
+      { matchId: 90, utc: new Date('2026-07-04T21:00:00Z') },
+    ]);
+    expect(kickoffWrites).toEqual([{ matchId: 90, utc: new Date('2026-07-04T21:00:00Z') }]);
+    expect(summary.reconcile.anomalies).toEqual([]);
   });
 });
 

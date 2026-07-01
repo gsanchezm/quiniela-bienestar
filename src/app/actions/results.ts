@@ -15,6 +15,8 @@ import {
   getResultsProvider,
   prismaSyncRepo,
   prismaKnockoutAssignRepo,
+  prismaKnockoutAdvanceRepo,
+  prismaKnockoutReconcileRepo,
   runFullSync,
   type FullSyncSummary,
 } from '@/server/services/sync';
@@ -87,6 +89,8 @@ export async function syncNowAction(): Promise<ResultActionResult> {
       provider,
       syncRepo: prismaSyncRepo(db),
       assignRepo: prismaKnockoutAssignRepo(db),
+      advanceRepo: prismaKnockoutAdvanceRepo(db),
+      reconcileRepo: prismaKnockoutReconcileRepo(db),
       sender: getEmailSender(),
       adminEmails: env.adminEmails,
       appUrl: env.appUrl,

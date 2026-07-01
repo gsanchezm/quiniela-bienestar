@@ -9,6 +9,8 @@ import {
   getResultsProvider,
   prismaSyncRepo,
   prismaKnockoutAssignRepo,
+  prismaKnockoutAdvanceRepo,
+  prismaKnockoutReconcileRepo,
   runFullSync,
 } from '@/server/services/sync';
 import { getEmailSender } from '@/server/email/sender';
@@ -37,6 +39,8 @@ export async function POST(req: Request): Promise<NextResponse> {
       provider,
       syncRepo: prismaSyncRepo(db),
       assignRepo: prismaKnockoutAssignRepo(db),
+      advanceRepo: prismaKnockoutAdvanceRepo(db),
+      reconcileRepo: prismaKnockoutReconcileRepo(db),
       sender: getEmailSender(),
       adminEmails: env.adminEmails,
       appUrl: env.appUrl,

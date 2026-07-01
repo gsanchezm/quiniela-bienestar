@@ -232,6 +232,8 @@ export interface FullSyncDeps {
   provider: ResultsProvider;
   syncRepo: SyncRepo;
   assignRepo: KnockoutAssignRepo;
+  advanceRepo: KnockoutAdvanceRepo;
+  reconcileRepo: KnockoutReconcileRepo;
   sender: EmailSender;
   adminEmails: string[];
   appUrl: string;
@@ -240,7 +242,11 @@ export interface FullSyncDeps {
 export interface FullSyncSummary {
   sync: SyncSummary;
   assign: KnockoutAssignResult;
+  advance: KnockoutAdvanceResult;
+  reconcile: KnockoutReconcilePlan;
 }
+
+const msg = (e: unknown) => (e instanceof Error ? e.message : 'error');
 
 export async function runFullSync(deps: FullSyncDeps, now: Date = new Date()): Promise<FullSyncSummary> {
   const all = await deps.provider.fetchAll();
@@ -248,25 +254,55 @@ export async function runFullSync(deps: FullSyncDeps, now: Date = new Date()): P
   // Goles (sin cambios respecto a hoy).
   const sync = await runSync(deps.syncRepo, selectFinished(all));
 
-  // Asignación KO, aislada: su fallo no rompe los goles.
+  const koFixtures = selectKnockoutFixtures(all);
+  // Solo R32 se siembra desde el proveedor; R16+ lo dueña el auto-avance.
+  const r32Fixtures = koFixtures.filter((f) => mapFdStage(f.stage) === 'R32');
+
+  // Asignación KO (solo R32), aislada: su fallo no rompe los goles.
   let assign: KnockoutAssignResult = { assigned: [], anomalies: [] };
   try {
-    assign = await runKnockoutAutoAssign(deps.assignRepo, selectKnockoutFixtures(all), now);
+    assign = await runKnockoutAutoAssign(deps.assignRepo, r32Fixtures, now);
   } catch (e) {
-    assign = { assigned: [], anomalies: [`Fallo en auto-asignación: ${e instanceof Error ? e.message : 'error'}`] };
+    assign = { assigned: [], anomalies: [`Fallo en auto-asignación R32: ${msg(e)}`] };
   }
 
-  // Aviso best-effort: solo si hubo novedades o anomalías; su fallo no rompe el sync.
-  if ((assign.assigned.length > 0 || assign.anomalies.length > 0) && deps.adminEmails.length > 0) {
+  // Auto-avance R16+ derivado de la topología, aislado. Corre ANTES de reconciliar:
+  // así los equipos ya están propagados cuando comparamos contra el proveedor.
+  let advance: KnockoutAdvanceResult = { advanced: [], anomalies: [] };
+  try {
+    advance = await runKnockoutAdvance(deps.advanceRepo);
+  } catch (e) {
+    advance = { advanced: [], anomalies: [`Fallo en auto-avance: ${msg(e)}`] };
+  }
+
+  // Reconciliación R16+, aislada: adopta el kickoff real y avisa desajustes.
+  let reconcile: KnockoutReconcilePlan = { kickoffUpdates: [], anomalies: [] };
+  try {
+    const rows = await deps.reconcileRepo.getKnockoutRows();
+    reconcile = planKnockoutReconcile(rows, koFixtures);
+    for (const u of reconcile.kickoffUpdates) await deps.reconcileRepo.updateKickoff(u.matchId, u.utc);
+  } catch (e) {
+    reconcile = { kickoffUpdates: [], anomalies: [`Fallo en reconciliación: ${msg(e)}`] };
+  }
+
+  // Aviso best-effort: si hubo novedades o anomalías en cualquiera de los pasos KO.
+  const hasNews =
+    assign.assigned.length > 0 ||
+    assign.anomalies.length > 0 ||
+    advance.advanced.length > 0 ||
+    advance.anomalies.length > 0 ||
+    reconcile.anomalies.length > 0;
+  if (hasNews && deps.adminEmails.length > 0) {
     try {
-      const { subject, html } = knockoutAssignedEmail(assign.assigned, assign.anomalies, deps.appUrl);
+      const anomalies = [...assign.anomalies, ...advance.anomalies, ...reconcile.anomalies];
+      const { subject, html } = knockoutAssignedEmail(assign.assigned, anomalies, deps.appUrl);
       await deps.sender.send(deps.adminEmails, subject, html);
     } catch (e) {
       console.error('No se pudo enviar el aviso de auto-asignación:', e);
     }
   }
 
-  return { sync, assign };
+  return { sync, assign, advance, reconcile };
 }
 
 export function getResultsProvider(): ResultsProvider | null {
@@ -362,6 +398,26 @@ export function planKnockoutReconcile(rows: ReconcileRow[], fixtures: ProviderFi
     }
   }
   return { kickoffUpdates, anomalies };
+}
+
+export interface KnockoutReconcileRepo {
+  getKnockoutRows(): Promise<ReconcileRow[]>;
+  updateKickoff(matchId: number, utc: Date): Promise<void>;
+}
+
+export function prismaKnockoutReconcileRepo(db: PrismaClient): KnockoutReconcileRepo {
+  return {
+    async getKnockoutRows() {
+      const rows = await db.match.findMany({
+        where: { isKnockout: true },
+        select: { id: true, stage: true, homeCode: true, awayCode: true, kickoffUtc: true },
+      });
+      return rows.map((r) => ({ ...r, stage: r.stage as string }));
+    },
+    async updateKickoff(matchId, utc) {
+      await db.match.update({ where: { id: matchId }, data: { kickoffUtc: utc } });
+    },
+  };
 }
 
 export function prismaKnockoutAdvanceRepo(db: PrismaClient): KnockoutAdvanceRepo {

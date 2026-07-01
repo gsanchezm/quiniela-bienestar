@@ -80,6 +80,7 @@ export function knockoutAssignedEmail(
   assigned: Array<{ stage: string; homeCode: string; awayCode: string }>,
   anomalies: string[],
   appUrl: string,
+  advanced: Array<{ matchId: number; slot: 'H' | 'A'; teamCode: string }> = [],
 ): EmailContent {
   const rows = assigned
     .map(
@@ -91,6 +92,17 @@ export function knockoutAssignedEmail(
   const assignedBlock = assigned.length
     ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">${rows}</table>`
     : `<p style="color:#a39f98;font-size:15px;">No se asignaron cruces nuevos.</p>`;
+  const advancedRows = advanced
+    .map(
+      (a) =>
+        `<tr><td style="color:#6f6b64;font-size:12px;letter-spacing:1px;padding:6px 12px 6px 0;">Partido ${a.matchId}</td>` +
+        `<td style="color:#f2f1ee;font-size:15px;font-weight:bold;padding:6px 0;">${a.slot === 'H' ? 'Local' : 'Visitante'}: ${a.teamCode}</td></tr>`,
+    )
+    .join('');
+  const advancedBlock = advanced.length
+    ? `<p style="color:#4db53c;font-size:14px;font-weight:bold;padding-top:16px;">Octavos+ actualizados por avance:</p>` +
+      `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">${advancedRows}</table>`
+    : '';
   const anomaliesBlock = anomalies.length
     ? `<p style="color:#e0a106;font-size:14px;font-weight:bold;padding-top:16px;">⚠️ Revisa en Admin:</p>` +
       `<ul style="color:#a39f98;font-size:13px;text-align:left;line-height:1.6;">${anomalies.map((x) => `<li>${x}</li>`).join('')}</ul>`
@@ -109,7 +121,7 @@ export function knockoutAssignedEmail(
           <span style="color:#4db53c;font-size:13px;letter-spacing:3px;font-weight:bold;">QUINIELA DEL BIENESTAR</span>
         </td></tr>
         <tr><td align="center" style="color:#f2f1ee;font-size:22px;font-weight:bold;padding:8px 0;">Eliminatoria actualizada</td></tr>
-        <tr><td align="center" style="padding:8px 0 16px;">${assignedBlock}${anomaliesBlock}</td></tr>
+        <tr><td align="center" style="padding:8px 0 16px;">${assignedBlock}${advancedBlock}${anomaliesBlock}</td></tr>
         <tr><td align="center">
           <a href="${appUrl}/partidos" style="background:#4db53c;color:#ffffff;text-decoration:none;font-weight:bold;
              padding:14px 28px;border-radius:4px;display:inline-block;letter-spacing:1px;">VER EL CUADRO</a>

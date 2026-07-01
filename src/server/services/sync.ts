@@ -295,7 +295,7 @@ export async function runFullSync(deps: FullSyncDeps, now: Date = new Date()): P
   if (hasNews && deps.adminEmails.length > 0) {
     try {
       const anomalies = [...assign.anomalies, ...advance.anomalies, ...reconcile.anomalies];
-      const { subject, html } = knockoutAssignedEmail(assign.assigned, anomalies, deps.appUrl);
+      const { subject, html } = knockoutAssignedEmail(assign.assigned, anomalies, deps.appUrl, advance.advanced);
       await deps.sender.send(deps.adminEmails, subject, html);
     } catch (e) {
       console.error('No se pudo enviar el aviso de auto-asignación:', e);

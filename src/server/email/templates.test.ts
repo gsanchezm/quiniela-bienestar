@@ -58,4 +58,33 @@ describe('correo de auto-asignación de eliminatoria', () => {
     );
     expect(html).toContain('UNKNOWN');
   });
+
+  it('el correo lista avances de topología y anomalías', () => {
+    const { subject, html } = knockoutAssignedEmail(
+      [], // assigned R32
+      ['m90 lado H: topología dice CAN pero ya hay BRA con picks — revisa Admin.'],
+      'https://app.example',
+      [{ matchId: 90, slot: 'H', teamCode: 'CAN' }], // advanced (nuevo parámetro)
+    );
+    expect(html).toContain('CAN');
+    expect(html).toContain('revisa Admin');
+    expect(subject).toBeTruthy();
+  });
+
+  it('no renderiza la sección de avances cuando no hay avances', () => {
+    const { html } = knockoutAssignedEmail([], [], 'https://quiniela.example', []);
+    expect(html).not.toContain('actualizados por avance');
+  });
+
+  it('renderiza la sección de avances con el matchId y el lado', () => {
+    const { html } = knockoutAssignedEmail(
+      [],
+      [],
+      'https://quiniela.example',
+      [{ matchId: 90, slot: 'H', teamCode: 'CAN' }],
+    );
+    expect(html).toContain('actualizados por avance');
+    expect(html).toContain('90');
+    expect(html).toContain('CAN');
+  });
 });

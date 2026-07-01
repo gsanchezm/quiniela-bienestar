@@ -1,6 +1,7 @@
 // Geometría y reparto del cuadro de eliminatorias.
 // Port de design_handoff_quiniela/js/bracket.jsx (constantes, cy, Conn).
 import type { MatchView } from '@/server/queries';
+import { bracketRank, r32SlotByTeams } from '@/domain/bracket-topology';
 
 export const H = 700; // alto interno del cuadro (px)
 export const COLW = 122; // ancho de columna
@@ -15,13 +16,19 @@ export const cy = (i: number, k: number) => (H * (2 * i + 1)) / (2 * k);
  * cuadro: el izquierdo toma las primeras `n` llaves, el derecho el resto.
  * Topología posicional (decorativa), igual que el prototipo.
  */
+/** Rango de display de un partido: R32 por contenido (par de equipos), R16+ por id. */
+function displayRank(m: MatchView): number {
+  const slot = m.stage === 'R32' ? r32SlotByTeams(m.home?.code ?? null, m.away?.code ?? null) : m.id;
+  return bracketRank(m.stage, slot ?? 999);
+}
+
 export function stageSide(
   matches: MatchView[],
   stage: string,
   side: 'L' | 'R',
   n: number,
 ): MatchView[] {
-  const ms = matches.filter((m) => m.stage === stage).sort((a, b) => a.id - b.id);
+  const ms = matches.filter((m) => m.stage === stage).sort((a, b) => displayRank(a) - displayRank(b));
   return side === 'L' ? ms.slice(0, n) : ms.slice(n);
 }
 

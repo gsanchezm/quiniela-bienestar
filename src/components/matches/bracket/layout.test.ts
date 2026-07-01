@@ -16,8 +16,8 @@ describe('stageSide — reparto izquierda/derecha por fase', () => {
     expect(stageSide(M, 'R32', 'R', 8).map((m) => m.id)).toEqual([81, 82, 83, 84, 85, 86, 87, 88]);
   });
 
-  it('R16 derecha son 4 (ids 93–96)', () => {
-    expect(stageSide(M, 'R16', 'R', 4).map((m) => m.id)).toEqual([93, 94, 95, 96]);
+  it('R16 derecha son 4 (ids 91,92,95,96)', () => {
+    expect(stageSide(M, 'R16', 'R', 4).map((m) => m.id)).toEqual([91, 92, 95, 96]);
   });
 
   it('SF tiene 1 por lado', () => {
@@ -45,5 +45,31 @@ describe('connPath — geometría del conector SVG', () => {
     expect(l2r.length).toBeGreaterThan(0);
     expect(r2l.length).toBeGreaterThan(0);
     expect(l2r).not.toEqual(r2l);
+  });
+});
+
+const r16 = (id: number): MatchView => ({
+  id, stage: 'R16', group: null, tag: `Octavos`, isKnockout: true,
+  home: null, away: null, kickoffUtc: '2026-07-04T17:00:00Z',
+  locked: false, result: null, outcome: null, myPick: null, myScore: null,
+});
+const r32 = (id: number, h: string, a: string): MatchView => ({
+  id, stage: 'R32', group: null, tag: 'Llave', isKnockout: true,
+  home: { code: h, name: h, flag: '' }, away: { code: a, name: a, flag: '' },
+  kickoffUtc: '2026-06-28T19:00:00Z', locked: false, result: null, outcome: null, myPick: null, myScore: null,
+});
+
+describe('stageSide ordena por rango de bracket', () => {
+  it('R16 se ordena [89,90,93,94] a la izquierda, no por id', () => {
+    const ms = [96, 95, 94, 93, 92, 91, 90, 89].map(r16);
+    expect(stageSide(ms, 'R16', 'L', 4).map((m) => m.id)).toEqual([89, 90, 93, 94]);
+    expect(stageSide(ms, 'R16', 'R', 4).map((m) => m.id)).toEqual([91, 92, 95, 96]);
+  });
+
+  it('R32 se ordena por el par de equipos (contenido), no por id', () => {
+    // ids arbitrarios; el orden lo decide el contenido (slots 74,77 arriba a la izquierda).
+    const ms = [r32(701, 'RSA', 'CAN') /*73*/, r32(702, 'GER', 'PAR') /*74*/, r32(703, 'FRA', 'SWE') /*77*/, r32(704, 'NED', 'MAR') /*75*/];
+    // izquierda arranca con slot 74 (GER/PAR) y 77 (FRA/SWE): ids 702, 703
+    expect(stageSide(ms, 'R32', 'L', 8).slice(0, 2).map((m) => m.id)).toEqual([702, 703]);
   });
 });

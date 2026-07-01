@@ -64,14 +64,25 @@ export async function saveResultAction(
 ): Promise<ResultActionResult> {
   return runAdminAction(async () => {
     await saveResult(prismaResultsRepo(db), matchId, { homeGoals, awayGoals, penWinner });
-    await runKnockoutAdvance(prismaKnockoutAdvanceRepo(db));
+    try {
+      await runKnockoutAdvance(prismaKnockoutAdvanceRepo(db));
+    } catch (e) {
+      console.error('Auto-avance tras captura manual falló (best-effort):', e);
+    }
   });
 }
 
 export async function clearResultAction(matchId: number): Promise<ResultActionResult> {
   return runAdminAction(async () => {
     await removeResult(prismaResultsRepo(db), matchId);
-    await runKnockoutAdvance(prismaKnockoutAdvanceRepo(db));
+    // computeAdvancement solo LLENA casilleros aguas abajo a partir de partidos con
+    // resultado; nunca quita un equipo. Por eso limpiar un resultado no revierte
+    // automáticamente un casillero aguas abajo ya avanzado: queda así hasta corregirlo a mano.
+    try {
+      await runKnockoutAdvance(prismaKnockoutAdvanceRepo(db));
+    } catch (e) {
+      console.error('Auto-avance tras captura manual falló (best-effort):', e);
+    }
   });
 }
 

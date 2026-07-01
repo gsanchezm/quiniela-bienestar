@@ -47,6 +47,10 @@ describe('bracket-topology (datos verificados 2026)', () => {
     expect(set.size).toBe(16);
     for (const slot of Object.keys(R32_TEAMS)) expect(set.has(Number(slot))).toBe(true);
   });
+
+  it('DISPLAY_ORDER.R32 respeta la secuencia exacta (no-consecutiva) del árbol', () => {
+    expect(DISPLAY_ORDER.R32).toEqual([74, 77, 73, 75, 83, 84, 81, 82, 76, 78, 79, 80, 86, 88, 85, 87]);
+  });
 });
 
 const r32 = (id: number, home: string, away: string, hg: number, ag: number, pen: 'H' | 'A' | null = null): AdvanceInput =>

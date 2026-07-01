@@ -6,6 +6,7 @@ import {
   runKnockoutAutoAssign,
   runFullSync,
   runKnockoutAdvance,
+  planKnockoutReconcile,
   type ProviderMatch,
   type ProviderRawMatch,
   type SyncRepo,
@@ -413,5 +414,28 @@ describe('runKnockoutAdvance', () => {
     ]);
     await runKnockoutAdvance(repo);
     expect(writes).toContainEqual({ matchId: 90, slot: 'H', teamCode: 'CAN' });
+  });
+});
+
+const fx = (stage: string, home: string, away: string, utc: string) =>
+  ({ utcDate: utc, stage, homeTeam: { tla: home, name: home }, awayTeam: { tla: away, name: away } });
+
+describe('planKnockoutReconcile', () => {
+  const rows = [
+    { id: 90, stage: 'R16', homeCode: 'CAN', awayCode: 'MAR', kickoffUtc: new Date('2026-07-04T00:00:00Z') },
+  ];
+  it('adopta el kickoff real del proveedor cuando los equipos coinciden (orden-indep.)', () => {
+    const r = planKnockoutReconcile(rows, [fx('LAST_16', 'MAR', 'CAN', '2026-07-04T21:00:00Z')]);
+    expect(r.kickoffUpdates).toEqual([{ matchId: 90, utc: new Date('2026-07-04T21:00:00Z') }]);
+    expect(r.anomalies).toEqual([]);
+  });
+  it('no reporta anomalía si el kickoff ya coincide', () => {
+    const same = [{ ...rows[0], kickoffUtc: new Date('2026-07-04T21:00:00Z') }];
+    const r = planKnockoutReconcile(same, [fx('LAST_16', 'CAN', 'MAR', '2026-07-04T21:00:00Z')]);
+    expect(r.kickoffUpdates).toEqual([]);
+  });
+  it('flag de anomalía si el proveedor publica un cruce R16+ que no cuadra con la topología', () => {
+    const r = planKnockoutReconcile(rows, [fx('LAST_16', 'CAN', 'BRA', '2026-07-04T21:00:00Z')]);
+    expect(r.anomalies.length).toBeGreaterThan(0);
   });
 });

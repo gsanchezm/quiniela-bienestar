@@ -324,6 +324,46 @@ export async function runKnockoutAdvance(repo: KnockoutAdvanceRepo): Promise<Kno
   return { advanced, anomalies };
 }
 
+const R16_PLUS = new Set(['R16', 'QF', 'SF', 'FIN']);
+const setKey = (a: string, b: string) => [a, b].slice().sort().join('|');
+
+export interface ReconcileRow {
+  id: number; stage: string; homeCode: string | null; awayCode: string | null; kickoffUtc: Date;
+}
+export interface KnockoutReconcilePlan {
+  kickoffUpdates: Array<{ matchId: number; utc: Date }>;
+  anomalies: string[];
+}
+
+// Red de seguridad: el proveedor sigue publicando cruces R16+. No los usamos para
+// llenar (eso lo hace el auto-avance), pero SÍ para (a) adoptar el kickoff real y
+// (b) avisar si un cruce del proveedor no cuadra con lo que derivó la topología.
+export function planKnockoutReconcile(rows: ReconcileRow[], fixtures: ProviderFixture[]): KnockoutReconcilePlan {
+  const kickoffUpdates: KnockoutReconcilePlan['kickoffUpdates'] = [];
+  const anomalies: string[] = [];
+  const ours = rows.filter((r) => R16_PLUS.has(r.stage) && r.homeCode && r.awayCode);
+  const byPair = new Map(ours.map((r) => [setKey(r.homeCode!, r.awayCode!), r]));
+
+  for (const f of fixtures) {
+    const ourStage = mapFdStage(f.stage);
+    if (!ourStage || !R16_PLUS.has(ourStage)) continue;
+    const home = f.homeTeam?.tla, away = f.awayTeam?.tla;
+    if (!home || !away) continue;
+    const match = byPair.get(setKey(home, away));
+    if (match) {
+      const utc = new Date(f.utcDate);
+      if (utc.getTime() !== match.kickoffUtc.getTime()) kickoffUpdates.push({ matchId: match.id, utc });
+    } else {
+      // El proveedor publica este cruce pero no lo tenemos igual en R16+.
+      const placed = ours.filter((r) => r.homeCode === home || r.awayCode === home || r.homeCode === away || r.awayCode === away);
+      if (placed.length > 0) {
+        anomalies.push(`${ourStage}: el proveedor publica ${home} vs ${away} que no cuadra con la topología — revisa Admin.`);
+      }
+    }
+  }
+  return { kickoffUpdates, anomalies };
+}
+
 export function prismaKnockoutAdvanceRepo(db: PrismaClient): KnockoutAdvanceRepo {
   return {
     async getKnockoutMatches() {

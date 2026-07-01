@@ -2,6 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   r32SlotByTeams, winnerTarget, loserTarget, bracketRank, DISPLAY_ORDER, R32_TEAMS,
+  computeAdvancement, type AdvanceInput,
 } from './bracket-topology';
 
 describe('bracket-topology (datos verificados 2026)', () => {
@@ -45,5 +46,37 @@ describe('bracket-topology (datos verificados 2026)', () => {
     expect(DISPLAY_ORDER.R32).toHaveLength(16);
     expect(set.size).toBe(16);
     for (const slot of Object.keys(R32_TEAMS)) expect(set.has(Number(slot))).toBe(true);
+  });
+});
+
+const r32 = (id: number, home: string, away: string, hg: number, ag: number, pen: 'H' | 'A' | null = null): AdvanceInput =>
+  ({ id, stage: 'R32', homeCode: home, awayCode: away, isKnockout: true, result: { homeGoals: hg, awayGoals: ag, penWinner: pen } });
+
+describe('computeAdvancement', () => {
+  it('ANCLA: Canadá (73) y Marruecos (75) → mismo octavos 90', () => {
+    const { writes, anomalies } = computeAdvancement([
+      r32(9001, 'RSA', 'CAN', 0, 1), // Canadá gana → slot 73
+      r32(9002, 'NED', 'MAR', 1, 1, 'A'), // Marruecos gana por penales → slot 75
+    ]);
+    expect(anomalies).toEqual([]);
+    expect(writes).toContainEqual({ matchId: 90, slot: 'H', teamCode: 'CAN' });
+    expect(writes).toContainEqual({ matchId: 90, slot: 'A', teamCode: 'MAR' });
+  });
+
+  it('empate KO sin ganador de penales no avanza', () => {
+    const { writes } = computeAdvancement([r32(9003, 'BRA', 'JPN', 1, 1, null)]);
+    expect(writes).toEqual([]);
+  });
+
+  it('semifinal manda ganador a la final y perdedor al 3.º', () => {
+    const sf: AdvanceInput = { id: 101, stage: 'SF', homeCode: 'BRA', awayCode: 'FRA', isKnockout: true, result: { homeGoals: 2, awayGoals: 0, penWinner: null } };
+    const { writes } = computeAdvancement([sf]);
+    expect(writes).toContainEqual({ matchId: 104, slot: 'H', teamCode: 'BRA' });
+    expect(writes).toContainEqual({ matchId: 103, slot: 'H', teamCode: 'FRA' });
+  });
+
+  it('R32 con equipos fuera del cuadro → anomalía', () => {
+    const { anomalies } = computeAdvancement([r32(9004, 'XXX', 'YYY', 1, 0)]);
+    expect(anomalies).toHaveLength(1);
   });
 });

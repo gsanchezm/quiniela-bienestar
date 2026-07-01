@@ -3,6 +3,9 @@
 // memoria quiniela-bracket-topologia-2026). Datos 2026-específicos hardcodeados
 // (YAGNI). El árbol NO es consecutivo (verificado con 6 fuentes).
 
+import { matchOutcome } from './scoring';
+import type { MatchResult } from './types';
+
 // Slot oficial R32 (73-88, Esquema X/FIFA) → par de códigos de equipo.
 export const R32_TEAMS: Record<number, readonly [string, string]> = {
   73: ['RSA', 'CAN'], 74: ['GER', 'PAR'], 75: ['NED', 'MAR'], 76: ['BRA', 'JPN'],
@@ -67,4 +70,44 @@ export function bracketRank(stage: string, slot: number): number {
   if (!order) return 999;
   const i = order.indexOf(slot);
   return i < 0 ? 999 : i;
+}
+
+export interface AdvanceInput {
+  id: number;
+  stage: string;
+  isKnockout: boolean;
+  homeCode: string | null;
+  awayCode: string | null;
+  result: MatchResult | null;
+}
+export interface AdvanceWrite { matchId: number; slot: 'H' | 'A'; teamCode: string }
+export interface AdvanceResult { writes: AdvanceWrite[]; anomalies: string[] }
+
+/** Slot oficial de un partido KO: R32 por contenido; R16+ por id (=slot X). */
+export function slotOf(m: { id: number; stage: string; homeCode: string | null; awayCode: string | null }): number | null {
+  if (m.stage === 'R32') return r32SlotByTeams(m.homeCode, m.awayCode);
+  return m.id;
+}
+
+/** Deriva todos los casilleros R16+ que se pueden llenar desde los resultados actuales. */
+export function computeAdvancement(matches: AdvanceInput[]): AdvanceResult {
+  const writes: AdvanceWrite[] = [];
+  const anomalies: string[] = [];
+  for (const m of matches) {
+    if (!m.result || !m.homeCode || !m.awayCode) continue;
+    const out = matchOutcome(m.result, m.isKnockout);
+    if (out !== 'H' && out !== 'A') continue; // empate KO sin penales → no avanza
+    const slot = slotOf(m);
+    if (slot === null) {
+      anomalies.push(`R32 sin slot: ${m.homeCode} vs ${m.awayCode} (id ${m.id}) no está en el cuadro 2026.`);
+      continue;
+    }
+    const winner = out === 'H' ? m.homeCode : m.awayCode;
+    const loser = out === 'H' ? m.awayCode : m.homeCode;
+    const wt = winnerTarget(slot);
+    if (wt) writes.push({ matchId: wt.parentId, slot: wt.slot, teamCode: winner });
+    const lt = loserTarget(slot);
+    if (lt) writes.push({ matchId: lt.parentId, slot: lt.slot, teamCode: loser });
+  }
+  return { writes, anomalies };
 }

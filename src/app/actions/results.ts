@@ -18,6 +18,7 @@ import {
   prismaKnockoutAdvanceRepo,
   prismaKnockoutReconcileRepo,
   runFullSync,
+  runKnockoutAdvance,
   type FullSyncSummary,
 } from '@/server/services/sync';
 import { env } from '@/server/env';
@@ -61,13 +62,17 @@ export async function saveResultAction(
   awayGoals: number,
   penWinner: 'H' | 'A' | null,
 ): Promise<ResultActionResult> {
-  return runAdminAction(() =>
-    saveResult(prismaResultsRepo(db), matchId, { homeGoals, awayGoals, penWinner }),
-  );
+  return runAdminAction(async () => {
+    await saveResult(prismaResultsRepo(db), matchId, { homeGoals, awayGoals, penWinner });
+    await runKnockoutAdvance(prismaKnockoutAdvanceRepo(db));
+  });
 }
 
 export async function clearResultAction(matchId: number): Promise<ResultActionResult> {
-  return runAdminAction(() => removeResult(prismaResultsRepo(db), matchId));
+  return runAdminAction(async () => {
+    await removeResult(prismaResultsRepo(db), matchId);
+    await runKnockoutAdvance(prismaKnockoutAdvanceRepo(db));
+  });
 }
 
 export async function assignTeamsAction(

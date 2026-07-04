@@ -26,10 +26,18 @@ export interface ResultInput {
   penWinner: 'H' | 'A' | null;
 }
 
-export async function saveResult(repo: ResultsRepo, matchId: number, input: ResultInput): Promise<void> {
+export async function saveResult(
+  repo: ResultsRepo,
+  matchId: number,
+  input: ResultInput,
+  now: Date = new Date(),
+): Promise<void> {
   const m = await repo.getMatch(matchId);
   if (!m) throw new ResultError('El partido no existe.');
   if (!m.homeCode || !m.awayCode) throw new ResultError('Asigna los equipos de la llave primero.');
+  if (now.getTime() < m.kickoffUtc.getTime()) {
+    throw new ResultError('El partido aún no inicia; el resultado se captura después del silbatazo.');
+  }
   const parsed = resultSchema(m.isKnockout).safeParse(input);
   if (!parsed.success) throw new ResultError(parsed.error.issues[0].message);
   await repo.setResult(matchId, input.homeGoals, input.awayGoals, input.penWinner);

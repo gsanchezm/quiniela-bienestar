@@ -9,6 +9,7 @@ import {
 } from './results';
 
 const ANTES = new Date('2026-06-20T00:00:00Z');
+const DESPUES = new Date('2026-07-01T00:00:00Z');
 
 const grupos: ResultsMatch = {
   id: 1,
@@ -59,33 +60,42 @@ function fakeRepo(matches: ResultsMatch[]): ResultsRepo & FakeState {
 describe('captura de resultados (admin)', () => {
   it('guarda un marcador válido', async () => {
     const repo = fakeRepo([grupos]);
-    await saveResult(repo, 1, { homeGoals: 2, awayGoals: 0, penWinner: null });
+    await saveResult(repo, 1, { homeGoals: 2, awayGoals: 0, penWinner: null }, DESPUES);
     expect(repo.results.get(1)).toEqual({ hg: 2, ag: 0, pen: null });
   });
 
   it('rechaza marcadores fuera de 0–99', async () => {
     const repo = fakeRepo([grupos]);
-    await expect(saveResult(repo, 1, { homeGoals: -1, awayGoals: 0, penWinner: null })).rejects.toThrow(ResultError);
-    await expect(saveResult(repo, 1, { homeGoals: 0, awayGoals: 100, penWinner: null })).rejects.toThrow(ResultError);
+    await expect(saveResult(repo, 1, { homeGoals: -1, awayGoals: 0, penWinner: null }, DESPUES)).rejects.toThrow(ResultError);
+    await expect(saveResult(repo, 1, { homeGoals: 0, awayGoals: 100, penWinner: null }, DESPUES)).rejects.toThrow(ResultError);
   });
 
   it('en grupos el empate no lleva penales', async () => {
     const repo = fakeRepo([grupos]);
-    await saveResult(repo, 1, { homeGoals: 1, awayGoals: 1, penWinner: null });
-    await expect(saveResult(repo, 1, { homeGoals: 1, awayGoals: 1, penWinner: 'H' })).rejects.toThrow(ResultError);
+    await saveResult(repo, 1, { homeGoals: 1, awayGoals: 1, penWinner: null }, DESPUES);
+    await expect(saveResult(repo, 1, { homeGoals: 1, awayGoals: 1, penWinner: 'H' }, DESPUES)).rejects.toThrow(ResultError);
   });
 
   it('en eliminatoria empatada exige ganador de penales', async () => {
     const repo = fakeRepo([{ ...ko, homeCode: 'MEX', awayCode: 'BRA' }]);
-    await expect(saveResult(repo, 73, { homeGoals: 1, awayGoals: 1, penWinner: null })).rejects.toThrow(/penales/i);
-    await saveResult(repo, 73, { homeGoals: 1, awayGoals: 1, penWinner: 'A' });
+    await expect(saveResult(repo, 73, { homeGoals: 1, awayGoals: 1, penWinner: null }, DESPUES)).rejects.toThrow(/penales/i);
+    await saveResult(repo, 73, { homeGoals: 1, awayGoals: 1, penWinner: 'A' }, DESPUES);
     expect(repo.results.get(73)).toEqual({ hg: 1, ag: 1, pen: 'A' });
   });
 
   it('puede borrar un resultado capturado', async () => {
     const repo = fakeRepo([grupos]);
-    await saveResult(repo, 1, { homeGoals: 2, awayGoals: 0, penWinner: null });
+    await saveResult(repo, 1, { homeGoals: 2, awayGoals: 0, penWinner: null }, DESPUES);
     await removeResult(repo, 1);
+    expect(repo.results.has(1)).toBe(false);
+  });
+
+  it('rechaza capturar un resultado antes del kickoff', async () => {
+    const repo = fakeRepo([grupos]);
+    const antesDelKickoff = new Date('2026-06-11T18:00:00Z');
+    await expect(
+      saveResult(repo, 1, { homeGoals: 2, awayGoals: 0, penWinner: null }, antesDelKickoff),
+    ).rejects.toThrow(/no inicia/i);
     expect(repo.results.has(1)).toBe(false);
   });
 });
